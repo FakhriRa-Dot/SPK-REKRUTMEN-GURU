@@ -1,0 +1,16 @@
+{
+  "djlint.executablePath": "D:\\SKRIPSI!\\sistem\\spk_rekrutmen_guru\\venv\\Scripts\\djlint.exe",
+  "files.associations": {
+    "*.html": "django-html"
+  },
+  "emmet.includeLanguages": {
+    "django-html": "html"
+  },
+  "[django-html]": {
+    "editor.defaultFormatter": "monosans.djlint",
+    "editor.formatOnSave": true
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}

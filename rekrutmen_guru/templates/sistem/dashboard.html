@@ -1,0 +1,241 @@
+{% extends 'sistem/base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Dashboard</h1>
+    <p>Ringkasan rekrutmen periode aktif</p>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-icon teal">
+        <i class="ti ti-users"></i>
+      </div>
+      <div class="stat-val">{{ total }}</div>
+      <div class="stat-lbl">Total Pelamar</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">
+        <i class="ti ti-check"></i>
+      </div>
+      <div class="stat-val">{{ layak }}</div>
+      <div class="stat-lbl">Kandidat Diterima</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon amber">
+        <i class="ti ti-clock"></i>
+      </div>
+      <div class="stat-val">{{ proses }}</div>
+      <div class="stat-lbl">Kandidat On Proses</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red">
+        <i class="ti ti-x"></i>
+      </div>
+      <div class="stat-val">{{ tidak_layak }}</div>
+      <div class="stat-lbl">Kandidat Ditolak</div>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-bottom: 20px">
+    <div class="card">
+      <div class="card-title">Diagram Rekrutmen</div>
+      <div class="card-sub">Jumlah kandidat per tahap</div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="font-size: 12px; color: var(--text-secondary); width: 130px">Tahap Administrasi</span>
+          <div style="flex: 1;
+                      height: 10px;
+                      background: #e0f5f9;
+                      border-radius: 5px;
+                      overflow: hidden">
+            <div style="height: 100%;
+                        background: #2d7d8e;
+                        border-radius: 5px;
+                        width: 100%"></div>
+          </div>
+          <span style="font-size: 12px;
+                       color: var(--text-muted);
+                       width: 30px;
+                       text-align: right">{{ total }}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="font-size: 12px; color: var(--text-secondary); width: 130px">Tahap Psikotes</span>
+          <div style="flex: 1;
+                      height: 10px;
+                      background: #e0f5f9;
+                      border-radius: 5px;
+                      overflow: hidden">
+            <div style="height: 100%;
+                        background: #2d7d8e;
+                        border-radius: 5px;
+                        width: 85%"></div>
+          </div>
+          <span style="font-size: 12px;
+                       color: var(--text-muted);
+                       width: 30px;
+                       text-align: right">{{ tahap_count.psikotes }}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="font-size: 12px; color: var(--text-secondary); width: 130px">Tahap Kompetensi</span>
+          <div style="flex: 1;
+                      height: 10px;
+                      background: #e0f5f9;
+                      border-radius: 5px;
+                      overflow: hidden">
+            <div style="height: 100%;
+                        background: #2d7d8e;
+                        border-radius: 5px;
+                        width: 70%"></div>
+          </div>
+          <span style="font-size: 12px;
+                       color: var(--text-muted);
+                       width: 30px;
+                       text-align: right">{{ tahap_count.kompetensi }}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="font-size: 12px; color: var(--text-secondary); width: 130px">Tahap Wawancara</span>
+          <div style="flex: 1;
+                      height: 10px;
+                      background: #e0f5f9;
+                      border-radius: 5px;
+                      overflow: hidden">
+            <div style="height: 100%;
+                        background: #2d7d8e;
+                        border-radius: 5px;
+                        width: 55%"></div>
+          </div>
+          <span style="font-size: 12px;
+                       color: var(--text-muted);
+                       width: 30px;
+                       text-align: right">{{ tahap_count.wawancara }}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="font-size: 12px; color: var(--text-secondary); width: 130px">Micro Teaching</span>
+          <div style="flex: 1;
+                      height: 10px;
+                      background: #e0f5f9;
+                      border-radius: 5px;
+                      overflow: hidden">
+            <div style="height: 100%;
+                        background: #2d7d8e;
+                        border-radius: 5px;
+                        width: 40%"></div>
+          </div>
+          <span style="font-size: 12px;
+                       color: var(--text-muted);
+                       width: 30px;
+                       text-align: right">{{ tahap_count.micro }}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="font-size: 12px; color: var(--text-secondary); width: 130px">Hasil Akhir</span>
+          <div style="flex: 1;
+                      height: 10px;
+                      background: #e0f5f9;
+                      border-radius: 5px;
+                      overflow: hidden">
+            <div style="height: 100%;
+                        background: #1a7a3c;
+                        border-radius: 5px;
+                        width: 30%"></div>
+          </div>
+          <span style="font-size: 12px;
+                       color: var(--text-muted);
+                       width: 30px;
+                       text-align: right">{{ layak }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="card"
+         style="display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center">
+      <div class="card-title" style="align-self: flex-start">Hasil Akhir</div>
+      <div class="card-sub" style="align-self: flex-start">Distribusi keputusan kandidat</div>
+      <svg width="160" height="160" viewBox="0 0 160 160">
+        <circle cx="80" cy="80" r="60" fill="none" stroke="#e0f5f9" stroke-width="24" />
+        <circle cx="80" cy="80" r="60" fill="none" stroke="#2d7d8e" stroke-width="24" stroke-dasharray="226 377" stroke-dashoffset="94" transform="rotate(-90 80 80)" />
+        <circle cx="80" cy="80" r="60" fill="none" stroke="#b42318" stroke-width="24" stroke-dasharray="151 377" stroke-dashoffset="-132" transform="rotate(-90 80 80)" />
+      </svg>
+      <div style="display: flex; gap: 16px; margin-top: 8px">
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px">
+          <div style="width: 10px;
+                      height: 10px;
+                      border-radius: 50%;
+                      background: #2d7d8e"></div>
+          <span style="color: var(--text-secondary)">Diterima</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px">
+          <div style="width: 10px;
+                      height: 10px;
+                      border-radius: 50%;
+                      background: #b42318"></div>
+          <span style="color: var(--text-secondary)">Ditolak</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px">
+          <div style="width: 10px;
+                      height: 10px;
+                      border-radius: 50%;
+                      background: #e0f5f9"></div>
+          <span style="color: var(--text-secondary)">Proses</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header">
+      <h3>Aktivitas Kandidat Terbaru</h3>
+      <a href="{% url 'manajemen_kandidat' %}"
+         style="font-size: 12px;
+                color: var(--teal)">Lihat semua</a>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Identitas Kandidat</th>
+          <th>Bidang Studi</th>
+          <th>Tahap</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for k in kandidat_terbaru %}
+          <tr>
+            <td>
+              <div style="font-weight: 500">{{ k.nama }}</div>
+              <div style="font-size: 11px; color: var(--text-muted)">{{ k.jenjang_pendidikan }}</div>
+            </td>
+            <td>{{ k.bidang_studi }}</td>
+            <td>
+              {% if k.status_tahap_4 == 'hadir' %}
+                Micro Teaching
+              {% elif k.status_tahap_3 == 'hadir' %}
+                Wawancara
+              {% elif k.status_tahap_2 == 'hadir' %}
+                Psikotes
+              {% else %}
+                Administrasi
+              {% endif %}
+            </td>
+            <td>
+              {% if k.label == 'diterima' %}
+                <span class="badge badge-green">Diterima</span>
+              {% elif k.label == 'tidak_diterima' %}
+                <span class="badge badge-red">Ditolak</span>
+              {% else %}
+                <span class="badge badge-amber">On Proses</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="4"
+                style="text-align: center;
+                       color: var(--text-muted);
+                       padding: 20px">Belum ada kandidat</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

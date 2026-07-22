@@ -1,0 +1,284 @@
+{% extends 'sistem/base.html' %}
+{% block title %}Input Penilaian{% endblock %}
+{% block page_title %}Input Penilaian{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Input Penilaian</h1>
+    <p>Input nilai kriteria untuk kandidat {{ kandidat.nama }}</p>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Form Input Penilaian</div>
+      <div class="card-sub">Isi nilai per kriteria seleksi</div>
+      <form method="POST">
+        {% csrf_token %}
+        <div style="background:var(--teal-light);
+                    border-radius:8px;
+                    padding:12px;
+                    margin-bottom:20px;
+                    display:flex;
+                    align-items:center;
+                    gap:12px">
+          <div style="width:44px;
+                      height:44px;
+                      border-radius:50%;
+                      background:var(--teal);
+                      display:flex;
+                      align-items:center;
+                      justify-content:center;
+                      flex-shrink:0">
+            <i class="ti ti-user" style="font-size:20px;color:#fff;"></i>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-primary);">{{ kandidat.nama }}</div>
+            <div style="font-size:12px;color:var(--text-muted);">{{ kandidat.jenjang_pendidikan }} — {{ kandidat.bidang_studi }}</div>
+          </div>
+        </div>
+        <div style="font-size:12px;
+                    font-weight:600;
+                    color:var(--text-muted);
+                    margin-bottom:12px;
+                    text-transform:uppercase;
+                    letter-spacing:0.05em">Tahap 1 — Kualifikasi Akademik</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Kualifikasi Akademik</label>
+            <select name="kualifikasi_akademik" class="form-control">
+              <option value="">-- Pilih --</option>
+              <option value="1" {% if nilai.kualifikasi_akademik == 1 %}selected{% endif %}>SMA/MA (1)</option>
+              <option value="2" {% if nilai.kualifikasi_akademik == 2 %}selected{% endif %}>D3 (2)</option>
+              <option value="3" {% if nilai.kualifikasi_akademik == 3 %}selected{% endif %}>D4 (3)</option>
+              <option value="4" {% if nilai.kualifikasi_akademik == 4 %}selected{% endif %}>S1 (4)</option>
+              <option value="5" {% if nilai.kualifikasi_akademik == 5 %}selected{% endif %}>S2/S3 (5)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pengalaman Mengajar (tahun)</label>
+            <input type="number"
+                   name="pengalaman_mengajar"
+                   class="form-control"
+                   min="0"
+                   placeholder="0"
+                   value="{{ nilai.pengalaman_mengajar }}">
+          </div>
+        </div>
+        <div style="font-size:12px;
+                    font-weight:600;
+                    color:var(--text-muted);
+                    margin-bottom:12px;
+                    margin-top:8px;
+                    text-transform:uppercase;
+                    letter-spacing:0.05em">Tahap 2 — Psikotes & Kompetensi</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Skor IQ</label>
+            <input type="number"
+                   name="iq"
+                   class="form-control"
+                   placeholder="90"
+                   value="{{ nilai.iq }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tes Psikotes</label>
+            <select name="tes_psikotes" class="form-control">
+              <option value="">-- Pilih --</option>
+              <option value="1" {% if nilai.tes_psikotes == 1 %}selected{% endif %}>Tidak Disarankan (1)</option>
+              <option value="2" {% if nilai.tes_psikotes == 2 %}selected{% endif %}>Dipertimbangkan (2)</option>
+              <option value="3" {% if nilai.tes_psikotes == 3 %}selected{% endif %}>Disarankan (3)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nilai Akademik (0-100)</label>
+          <input type="number"
+                 name="nilai_akademik"
+                 class="form-control"
+                 placeholder="75"
+                 min="0"
+                 max="100"
+                 step="0.1"
+                 value="{{ nilai.nilai_akademik }}">
+        </div>
+        <div style="font-size:12px;
+                    font-weight:600;
+                    color:var(--text-muted);
+                    margin-bottom:12px;
+                    margin-top:8px;
+                    text-transform:uppercase;
+                    letter-spacing:0.05em">Tahap 3 — Wawancara & Ruhiyah</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Komitmen (Wawancara)</label>
+            <select name="komitmen" class="form-control">
+              <option value="">-- Pilih --</option>
+              <option value="1" {% if nilai.komitmen == 1 %}selected{% endif %}>Tidak Disarankan (1)</option>
+              <option value="2" {% if nilai.komitmen == 2 %}selected{% endif %}>Dipertimbangkan (2)</option>
+              <option value="3" {% if nilai.komitmen == 3 %}selected{% endif %}>Disarankan (3)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ruhiyah (Keagamaan)</label>
+            <select name="ruhiyah" class="form-control">
+              <option value="">-- Pilih --</option>
+              <option value="0" {% if nilai.ruhiyah == 0 %}selected{% endif %}>Tidak Lulus (0)</option>
+              <option value="1" {% if nilai.ruhiyah == 1 %}selected{% endif %}>Lulus (1)</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-size:12px;
+                    font-weight:600;
+                    color:var(--text-muted);
+                    margin-bottom:12px;
+                    margin-top:8px;
+                    text-transform:uppercase;
+                    letter-spacing:0.05em">Tahap 4 — Micro Teaching</div>
+        <div class="form-group">
+          <label class="form-label">Nilai Micro Teaching (0-100)</label>
+          <input type="number"
+                 name="micro_teaching"
+                 class="form-control"
+                 placeholder="85"
+                 min="0"
+                 max="100"
+                 step="0.1"
+                 value="{{ nilai.micro_teaching }}">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button type="submit" class="btn btn-primary">
+            <i class="ti ti-device-floppy"></i> Simpan Penilaian
+          </button>
+          <a href="{% url 'administrasi' %}" class="btn btn-secondary">Batal</a>
+        </div>
+      </form>
+    </div>
+    <div class="card">
+      <div class="card-title">Ringkasan Nilai</div>
+      <div class="card-sub">Nilai yang sudah tersimpan</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    padding:8px 12px;
+                    background:#f8fafc;
+                    border-radius:8px">
+          <span style="font-size:12px;color:var(--text-muted);">Kualifikasi Akademik</span>
+          <span style="font-size:12px;font-weight:500;">{{ nilai.kualifikasi_akademik|default:'-' }}</span>
+        </div>
+        <div style="display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    padding:8px 12px;
+                    background:#f8fafc;
+                    border-radius:8px">
+          <span style="font-size:12px;color:var(--text-muted);">IQ</span>
+          <span style="font-size:12px;font-weight:500;">{{ nilai.iq|default:'-' }}</span>
+        </div>
+        <div style="display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    padding:8px 12px;
+                    background:#f8fafc;
+                    border-radius:8px">
+          <span style="font-size:12px;color:var(--text-muted);">Tes Psikotes</span>
+          <span style="font-size:12px;font-weight:500;">{{ nilai.tes_psikotes|default:'-' }}</span>
+        </div>
+        <div style="display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    padding:8px 12px;
+                    background:#f8fafc;
+                    border-radius:8px">
+          <span style="font-size:12px;color:var(--text-muted);">Nilai Akademik</span>
+          <span style="font-size:12px;font-weight:500;">{{ nilai.nilai_akademik|default:'-' }}</span>
+        </div>
+        <div style="display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    padding:8px 12px;
+                    background:#f8fafc;
+                    border-radius:8px">
+          <span style="font-size:12px;color:var(--text-muted);">Pengalaman Mengajar</span>
+          <span style="font-size:12px;font-weight:500;">{{ nilai.pengalaman_mengajar|default:'-' }}</span>
+        </div>
+        <div style="display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    padding:8px 12px;
+                    background:#f8fafc;
+                    border-radius:8px">
+          <span style="font-size:12px;color:var(--text-muted);">Komitmen</span>
+          <span style="font-size:12px;font-weight:500;">{{ nilai.komitmen|default:'-' }}</span>
+        </div>
+        <div style="display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    padding:8px 12px;
+                    background:#f8fafc;
+                    border-radius:8px">
+          <span style="font-size:12px;color:var(--text-muted);">Ruhiyah</span>
+          <span style="font-size:12px;font-weight:500;">{{ nilai.ruhiyah|default:'-' }}</span>
+        </div>
+        <div style="display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    padding:8px 12px;
+                    background:#f8fafc;
+                    border-radius:8px">
+          <span style="font-size:12px;color:var(--text-muted);">Micro Teaching</span>
+          <span style="font-size:12px;font-weight:500;">{{ nilai.micro_teaching|default:'-' }}</span>>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <div style="font-size:12px;font-weight:600;margin-bottom:8px;">Status Tahapan</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;
+                      justify-content:space-between;
+                      align-items:center">
+            <span style="font-size:12px;color:var(--text-muted);">Kualifikasi Akademik</span>
+            {% if kandidat.status_tahap_1 == 'hadir' %}
+              <span class="badge badge-green">Hadir</span>
+            {% else %}
+              <span class="badge badge-gray">{{ kandidat.status_tahap_1 }}</span>
+            {% endif %}
+          </div>
+          <div style="display:flex;
+                      justify-content:space-between;
+                      align-items:center">
+            <span style="font-size:12px;color:var(--text-muted);">Psikotes & Kompetensi</span>
+            {% if kandidat.status_tahap_2 == 'hadir' %}
+              <span class="badge badge-green">Hadir</span>
+            {% elif kandidat.status_tahap_2 == 'gugur' %}
+              <span class="badge badge-red">Gugur</span>
+            {% else %}
+              <span class="badge badge-gray">Menunggu</span>
+            {% endif %}
+          </div>
+          <div style="display:flex;
+                      justify-content:space-between;
+                      align-items:center">
+            <span style="font-size:12px;color:var(--text-muted);">Wawancara & Ruhiyah</span>
+            {% if kandidat.status_tahap_3 == 'hadir' %}
+              <span class="badge badge-green">Hadir</span>
+            {% elif kandidat.status_tahap_3 == 'gugur' %}
+              <span class="badge badge-red">Gugur</span>
+            {% else %}
+              <span class="badge badge-gray">Menunggu</span>
+            {% endif %}
+          </div>
+          <div style="display:flex;
+                      justify-content:space-between;
+                      align-items:center">
+            <span style="font-size:12px;color:var(--text-muted);">Micro Teaching</span>
+            {% if kandidat.status_tahap_4 == 'hadir' %}
+              <span class="badge badge-green">Hadir</span>
+            {% elif kandidat.status_tahap_4 == 'gugur' %}
+              <span class="badge badge-red">Gugur</span>
+            {% else %}
+              <span class="badge badge-gray">Menunggu</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

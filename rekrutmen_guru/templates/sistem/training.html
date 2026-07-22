@@ -1,0 +1,141 @@
+{% extends 'sistem/base.html' %}
+{% block title %}Training Model{% endblock %}
+{% block page_title %}Training Model{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Training & Kalibrasi Model</h1>
+    <p>Lakukan training ulang model dan hitung ulang MARCOS secara berkala (disarankan per bulan atau per periode)</p>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Hitung Ulang MARCOS</div>
+      <div class="card-sub">
+        Hitung ulang nilai utilitas semua kandidat yang sudah selesai.
+        Lakukan jika ada perubahan bobot FUCOM atau ada kandidat baru yang selesai secara massal.
+      </div>
+      {% if pesan_marcos %}
+        <div style="background:#e6f4ea;
+                    color:#1a7a3c;
+                    padding:10px 14px;
+                    border-radius:8px;
+                    margin-bottom:16px;
+                    font-size:13px">
+          <i class="ti ti-check"></i> {{ pesan_marcos }}
+        </div>
+      {% endif %}
+      <div style="background:#f8fafc;
+                  border-radius:8px;
+                  padding:12px;
+                  margin-bottom:16px;
+                  font-size:12px;
+                  color:var(--text-muted)">
+        <i class="ti ti-info-circle"></i>
+        MARCOS dihitung otomatis setiap kandidat menyelesaikan tahap Micro Teaching.
+        Hitung ulang manual hanya diperlukan jika bobot FUCOM diperbarui.
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="aksi" value="marcos">
+        <button type="submit" class="btn btn-secondary">
+          <i class="ti ti-refresh"></i> Hitung Ulang MARCOS
+        </button>
+      </form>
+    </div>
+    <div class="card">
+      <div class="card-title">Latih Ulang Model XGBoost</div>
+      <div class="card-sub">
+        Latih ulang model dengan data historis terbaru.
+        Lakukan jika ada data historis baru yang ditambahkan atau setelah periode rekrutmen selesai.
+      </div>
+      {% if hasil_training %}
+        {% if hasil_training.error %}
+          <div style="background:#fde8e8;
+                      color:#b42318;
+                      padding:10px 14px;
+                      border-radius:8px;
+                      margin-bottom:16px;
+                      font-size:13px">
+            <i class="ti ti-alert-circle"></i> {{ hasil_training.error }}
+          </div>
+        {% else %}
+          <div style="background:#e6f4ea;
+                      color:#1a7a3c;
+                      padding:10px 14px;
+                      border-radius:8px;
+                      margin-bottom:16px;
+                      font-size:13px">
+            <i class="ti ti-check"></i> Model berhasil dilatih ulang!
+          </div>
+          <div style="display:grid;
+                      grid-template-columns:1fr 1fr;
+                      gap:8px;
+                      margin-bottom:16px">
+            <div style="background:#f0f9fa;
+                        border-radius:8px;
+                        padding:12px;
+                        text-align:center">
+              <div style="font-size:22px;font-weight:700;color:var(--teal);">{{ hasil_training.akurasi }}%</div>
+              <div style="font-size:11px;color:var(--text-muted);">Akurasi</div>
+            </div>
+            <div style="background:#f0f9fa;
+                        border-radius:8px;
+                        padding:12px;
+                        text-align:center">
+              <div style="font-size:22px;font-weight:700;color:var(--teal);">{{ hasil_training.jumlah_total }}</div>
+              <div style="font-size:11px;color:var(--text-muted);">Total Data</div>
+            </div>
+            <div style="background:#f0f9fa;
+                        border-radius:8px;
+                        padding:12px;
+                        text-align:center">
+              <div style="font-size:22px;font-weight:700;">{{ hasil_training.train_accuracy }}%</div>
+              <div style="font-size:11px;color:var(--text-muted);">Akurasi Training</div>
+            </div>
+            <div style="background:#f0f9fa;
+                        border-radius:8px;
+                        padding:12px;
+                        text-align:center">
+              <div style="font-size:22px;font-weight:700;">{{ hasil_training.test_accuracy }}%</div>
+              <div style="font-size:11px;color:var(--text-muted);">Akurasi Testing</div>
+            </div>
+          </div>
+          <div style="background:#f8fafc;
+                      border-radius:8px;
+                      padding:12px;
+                      margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;padding:4px 0;">
+              <span style="font-size:12px;color:var(--text-muted);">Selisih akurasi</span>
+              <div>
+                <span style="font-size:12px;font-weight:500;">{{ hasil_training.selisih_accuracy }}%</span>
+                {% if hasil_training.selisih_accuracy < 5 %}
+                  <span class="badge badge-green" style="margin-left:6px;">Aman</span>
+                {% elif hasil_training.selisih_accuracy < 10 %}
+                  <span class="badge badge-amber" style="margin-left:6px;">Perhatikan</span>
+                {% else %}
+                  <span class="badge badge-red" style="margin-left:6px;">Overfitting</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      {% endif %}
+      <div style="background:#f8fafc;
+                  border-radius:8px;
+                  padding:12px;
+                  margin-bottom:16px;
+                  font-size:12px;
+                  color:var(--text-muted)">
+        <i class="ti ti-info-circle"></i>
+        Prediksi berjalan otomatis menggunakan model yang sudah ada.
+        Training ulang hanya diperlukan jika ada data historis baru.
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="aksi" value="training">
+        <button type="submit" class="btn btn-primary">
+          <i class="ti ti-brain"></i> Latih Ulang Model
+        </button>
+      </form>
+    </div>
+  </div>
+{% endblock content %}

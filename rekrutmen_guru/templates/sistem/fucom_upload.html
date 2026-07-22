@@ -1,0 +1,114 @@
+{% extends 'sistem/base.html' %}
+{% block title %}Bobot FUCOM{% endblock %}
+{% block page_title %}Bobot FUCOM{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Bobot FUCOM</h1>
+    <p>Upload kuesioner untuk menghitung bobot kriteria seleksi</p>
+  </div>
+  <div class="grid-2" style="align-items:start;">
+    <div class="card">
+      <div class="card-title">Upload File Kuesioner</div>
+      <div class="card-sub">
+        Upload file Excel yang sudah diisi responden. Minimal 2 responden,
+        bisa lebih — sistem otomatis membaca semua sheet yang diawali
+        <strong>Responden_</strong> (contoh: Responden_1, Responden_2, Responden_3).
+      </div>
+      {% if error %}
+        <div style="background:#fde8e8;
+                    color:#b42318;
+                    padding:10px 14px;
+                    border-radius:8px;
+                    margin-bottom:16px;
+                    font-size:13px">⚠ {{ error }}</div>
+      {% endif %}
+      {% if sukses %}
+        <div style="background:#e6f4ea;
+                    color:#1a7a3c;
+                    padding:10px 14px;
+                    border-radius:8px;
+                    margin-bottom:16px;
+                    font-size:13px">✅ Bobot berhasil dihitung dari {{ jumlah_responden }} responden dan disimpan!</div>
+      {% endif %}
+      <div style="background:#f0f9fa;
+                  border:1px solid #c7e8ee;
+                  border-radius:8px;
+                  padding:12px 14px;
+                  margin-bottom:16px">
+        <div style="font-size:12px;
+                    font-weight:600;
+                    color:var(--teal);
+                    margin-bottom:8px">
+          <i class="ti ti-info-circle"></i> Format Template
+        </div>
+        <div style="font-size:12px;
+                    color:var(--text-secondary);
+                    margin-bottom:10px">
+          File harus menggunakan template resmi dengan format sheet:
+          <strong>Responden_1</strong>, <strong>Responden_2</strong>, dst.
+          Tiap sheet berisi urutan prioritas dan rasio perbandingan kriteria.
+        </div>
+        <a href="{% url 'download_template_fucom' %}"
+           class="btn btn-secondary"
+           style="font-size:12px">
+          <i class="ti ti-download"></i> Download Template Excel
+        </a>
+      </div>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">File Excel (.xlsx)</label>
+          <input type="file"
+                 name="file_excel"
+                 accept=".xlsx"
+                 class="form-control"
+                 required>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <i class="ti ti-upload"></i> Upload & Hitung Bobot
+        </button>
+      </form>
+    </div>
+    <div class="table-wrap">
+      <div class="table-header">
+        <h3>Bobot Kriteria Saat Ini</h3>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Kriteria</th>
+            <th>Bobot</th>
+            <th>Visualisasi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for k in kriteria_db %}
+            <tr>
+              <td style="font-weight:500;">{{ k.nama }}</td>
+              <td style="font-weight:600;color:var(--teal);">{{ k.bobot }}</td>
+              <td>
+                <div style="width:150px;
+                            height:8px;
+                            background:#e0f5f9;
+                            border-radius:4px;
+                            overflow:hidden">
+                  <div style="height:100%;
+                              background:#2d7d8e;
+                              border-radius:4px;
+                              width:{% widthratio k.bobot 1 100 %}%"></div>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="3"
+                  style="text-align:center;
+                         color:var(--text-muted);
+                         padding:20px">Belum ada bobot — upload file dulu</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock content %}

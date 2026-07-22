@@ -1,0 +1,296 @@
+{% extends 'sistem/base.html' %}
+{% block title %}Prediksi XGBoost{% endblock %}
+{% block page_title %}Prediksi XGBoost{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Prediksi XGBoost</h1>
+    <p>Prediksi kelayakan kandidat berdasarkan model XGBoost</p>
+  </div>
+  {% if belum_diprediksi %}
+    <div style="background:#fff3e0;
+                border:1px solid #ffb74d;
+                border-radius:10px;
+                padding:14px 18px;
+                margin-bottom:20px;
+                display:flex;
+                align-items:center;
+                justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <i class="ti ti-alert-circle" style="font-size:20px;color:#f57c00;"></i>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#e65100;">{{ belum_diprediksi.count }} kandidat belum diprediksi</div>
+          <div style="font-size:12px;color:#f57c00;">
+            Kemungkinan terjadi error saat prediksi otomatis atau model belum ditraining.
+          </div>
+        </div>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit"
+                class="btn btn-primary"
+                style="font-size:12px;
+                       white-space:nowrap">
+          <i class="ti ti-cpu"></i> Prediksi Sekarang
+        </button>
+      </form>
+    </div>
+  {% endif %}
+  <!-- Filter & Tab -->
+  <div style="display:flex;
+              align-items:center;
+              justify-content:space-between;
+              margin-bottom:12px">
+    <div style="display:flex;
+                gap:4px;
+                background:#f1f5f9;
+                border-radius:8px;
+                padding:3px">
+      <a href="?tab=semua&periode={{ periode_aktif }}"
+         style="padding:6px 14px;
+                border-radius:6px;
+                font-size:12px;
+                font-weight:500;
+                {% if tab_aktif == 'semua' %}background:#fff;
+                color:var(--text-primary);
+                border:1px solid var(--border);
+                {% else %}color:var(--text-muted);
+                {% endif %}">Semua ({{ semua|length }})</a>
+      <a href="?tab=layak&periode={{ periode_aktif }}"
+         style="padding:6px 14px;
+                border-radius:6px;
+                font-size:12px;
+                font-weight:500;
+                {% if tab_aktif == 'layak' %}background:#fff;
+                color:var(--text-primary);
+                border:1px solid var(--border);
+                {% else %}color:var(--text-muted);
+                {% endif %}">Layak ({{ layak|length }})</a>
+      <a href="?tab=tidak_layak&periode={{ periode_aktif }}"
+         style="padding:6px 14px;
+                border-radius:6px;
+                font-size:12px;
+                font-weight:500;
+                {% if tab_aktif == 'tidak_layak' %}background:#fff;
+                color:var(--text-primary);
+                border:1px solid var(--border);
+                {% else %}color:var(--text-muted);
+                {% endif %}">Tidak Layak ({{ tidak_layak|length }})</a>
+    </div>
+    <select id="filter-periode"
+            class="form-control"
+            style="width:160px;
+                   height:32px;
+                   font-size:12px"
+            onchange="filterPeriode()">
+      <option value="">Semua Periode</option>
+      {% for p in periode_list %}
+        <option value="{{ p.id }}"
+                {% if periode_aktif == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nama }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <!-- Tabel kiri kanan -->
+  {% if tab_aktif == 'semua' %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <!-- Layak -->
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3 style="color:#1a7a3c;">Layak</h3>
+          <span style="font-size:12px;color:var(--text-muted);">{{ layak|length }} kandidat</span>
+        </div>
+        <div style="max-height:500px;overflow-y:auto;">
+          <table>
+            <thead style="position:sticky;top:0;z-index:1;">
+              <tr>
+                <th>Kandidat</th>
+                <th>Ki</th>
+                <th>Prob.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for h in layak %}
+                <tr style="cursor:pointer"
+                    onclick="window.location='{% url 'detail_prediksi' h.kandidat.id %}'">
+                  <td>
+                    <div style="font-weight:500;">{{ h.kandidat.nama }}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">{{ h.kandidat.bidang_studi }}</div>
+                  </td>
+                  <td style="font-size:12px;font-weight:600;color:var(--teal);">{{ h.nilai_utilitas }}</td>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <div style="width:60px;
+                                  height:6px;
+                                  background:#e6f4ea;
+                                  border-radius:3px;
+                                  overflow:hidden">
+                        <div style="height:100%;
+                                    background:#1a7a3c;
+                                    border-radius:3px;
+                                    width:{{ h.probabilitas }}%"></div>
+                      </div>
+                      <span style="font-size:12px;font-weight:600;color:#1a7a3c;">{{ h.probabilitas }}%</span>
+                    </div>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="3"
+                      style="text-align:center;
+                             color:var(--text-muted);
+                             padding:20px">Belum ada</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Tidak Layak -->
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3 style="color:#b42318;">Tidak Layak</h3>
+          <span style="font-size:12px;color:var(--text-muted);">{{ tidak_layak|length }} kandidat</span>
+        </div>
+        <div style="max-height:500px;overflow-y:auto;">
+          <table>
+            <thead style="position:sticky;top:0;z-index:1;">
+              <tr>
+                <th>Kandidat</th>
+                <th>Ki</th>
+                <th>Prob.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for h in tidak_layak %}
+                <tr style="cursor:pointer"
+                    onclick="window.location='{% url 'detail_prediksi' h.kandidat.id %}'">
+                  <td>
+                    <div style="font-weight:500;">{{ h.kandidat.nama }}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">{{ h.kandidat.bidang_studi }}</div>
+                  </td>
+                  <td style="font-size:12px;font-weight:600;color:var(--teal);">{{ h.nilai_utilitas }}</td>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <div style="width:60px;
+                                  height:6px;
+                                  background:#fde8e8;
+                                  border-radius:3px;
+                                  overflow:hidden">
+                        <div style="height:100%;
+                                    background:#b42318;
+                                    border-radius:3px;
+                                    width:{{ h.probabilitas }}%"></div>
+                      </div>
+                      <span style="font-size:12px;font-weight:600;color:#b42318;">{{ h.probabilitas }}%</span>
+                    </div>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="3"
+                      style="text-align:center;
+                             color:var(--text-muted);
+                             padding:20px">Belum ada</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="table-wrap">
+      <div style="max-height:500px;overflow-y:auto;">
+        <table>
+          <thead style="position:sticky;top:0;z-index:1;">
+            <tr>
+              <th>Kandidat</th>
+              <th>Bidang Studi</th>
+              <th>Periode</th>
+              <th>Nilai Ki</th>
+              <th>Probabilitas</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if tab_aktif == 'layak' %}
+              {% for h in layak %}
+                <tr style="cursor:pointer"
+                    onclick="window.location='{% url 'detail_prediksi' h.kandidat.id %}'">
+                  <td style="font-weight:500;">{{ h.kandidat.nama }}</td>
+                  <td style="font-size:12px;">{{ h.kandidat.bidang_studi }}</td>
+                  <td style="font-size:12px;color:var(--text-muted);">{{ h.kandidat.periode|default:"-" }}</td>
+                  <td style="font-weight:600;color:var(--teal);">{{ h.nilai_utilitas }}</td>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <div style="width:80px;
+                                  height:6px;
+                                  background:#e6f4ea;
+                                  border-radius:3px;
+                                  overflow:hidden">
+                        <div style="height:100%;
+                                    background:#1a7a3c;
+                                    border-radius:3px;
+                                    width:{{ h.probabilitas }}%"></div>
+                      </div>
+                      <span style="font-size:12px;font-weight:600;color:#1a7a3c;">{{ h.probabilitas }}%</span>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-green">Layak</span></td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="6"
+                      style="text-align:center;
+                             color:var(--text-muted);
+                             padding:20px">Belum ada data</td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              {% for h in tidak_layak %}
+                <tr style="cursor:pointer"
+                    onclick="window.location='{% url 'detail_prediksi' h.kandidat.id %}'">
+                  <td style="font-weight:500;">{{ h.kandidat.nama }}</td>
+                  <td style="font-size:12px;">{{ h.kandidat.bidang_studi }}</td>
+                  <td style="font-size:12px;color:var(--text-muted);">{{ h.kandidat.periode|default:"-" }}</td>
+                  <td style="font-weight:600;color:var(--teal);">{{ h.nilai_utilitas }}</td>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <div style="width:80px;
+                                  height:6px;
+                                  background:#fde8e8;
+                                  border-radius:3px;
+                                  overflow:hidden">
+                        <div style="height:100%;
+                                    background:#b42318;
+                                    border-radius:3px;
+                                    width:{{ h.probabilitas }}%"></div>
+                      </div>
+                      <span style="font-size:12px;font-weight:600;color:#b42318;">{{ h.probabilitas }}%</span>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-red">Tidak Layak</span></td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="6"
+                      style="text-align:center;
+                             color:var(--text-muted);
+                             padding:20px">Belum ada data</td>
+                </tr>
+              {% endfor %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+{% endblock content %}
+{% block extra_js %}
+  <script>
+function filterPeriode() {
+  const val = document.getElementById('filter-periode').value;
+  const tab = '{{ tab_aktif }}';
+  window.location.href = '?tab=' + tab + '&periode=' + val;
+}
+  </script>
+{% endblock extra_js %}

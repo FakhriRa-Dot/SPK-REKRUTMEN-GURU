@@ -1,0 +1,94 @@
+{% extends 'sistem/base.html' %}
+{% block title %}Hasil Akhir{% endblock %}
+{% block page_title %}Hasil Akhir{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Hasil Akhir Rekrutmen</h1>
+    <p>Klik kandidat untuk melihat detail nilai dan keputusan</p>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header">
+      <h3>Tabel Keputusan Akhir</h3>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <select id="filter-periode"
+                class="form-control"
+                style="width:160px;
+                       height:32px;
+                       font-size:12px"
+                onchange="filterPeriode()">
+          <option value="">Semua Periode</option>
+          {% for p in periode_list %}
+            <option value="{{ p.id }}"
+                    {% if periode_aktif == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nama }}</option>
+          {% endfor %}
+        </select>
+        <span class="badge badge-green">{{ total_layak }} Diterima</span>
+        <span class="badge badge-red">{{ total_tidak }} Ditolak</span>
+      </div>
+    </div>
+    <div style="max-height:600px;overflow-y:auto;">
+      <table>
+        <thead style="position:sticky;top:0;z-index:1;">
+          <tr>
+            <th>Ranking</th>
+            <th>Nama Kandidat</th>
+            <th>Bidang Studi</th>
+            <th>Jenjang</th>
+            <th>Nilai Ki</th>
+            <th>Prediksi</th>
+            <th>Probabilitas</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in semua %}
+            <tr style="cursor:pointer"
+                onclick="window.location='{% url 'detail_hasil' h.obj.kandidat.id %}'">
+              <td style="font-weight:600;color:var(--teal);">{{ h.rank_periode }}</td>
+              <td>
+                <div style="font-weight:500;">{{ h.obj.kandidat.nama }}</div>
+                <div style="font-size:11px;color:var(--text-muted);">{{ h.obj.kandidat.bidang_studi }}</div>
+              </td>
+              <td>{{ h.obj.kandidat.bidang_studi }}</td>
+              <td>{{ h.obj.kandidat.jenjang_pendidikan }}</td>
+              <td style="font-weight:500;">{{ h.obj.nilai_utilitas }}</td>
+              <td>
+                {% if h.obj.prediksi == 'Layak' %}
+                  <span class="badge badge-green">Layak</span>
+                {% elif h.obj.prediksi == 'Tidak Layak' %}
+                  <span class="badge badge-red">Tidak Layak</span>
+                {% else %}
+                  <span class="badge badge-gray">-</span>
+                {% endif %}
+              </td>
+              <td>{{ h.obj.probabilitas|default:"-" }}{% if h.obj.probabilitas %}%{% endif %}</td>
+              <td>
+                {% if h.obj.prediksi == 'Layak' %}
+                  <span class="badge badge-green"><i class="ti ti-check"></i> Diterima</span>
+                {% elif h.obj.prediksi == 'Tidak Layak' %}
+                  <span class="badge badge-red"><i class="ti ti-x"></i> Ditolak</span>
+                {% else %}
+                  <span class="badge badge-gray">Belum diproses</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="8"
+                  style="text-align:center;
+                         color:var(--text-muted);
+                         padding:20px">Belum ada hasil akhir</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock content %}
+{% block extra_js %}
+  <script>
+function filterPeriode() {
+  const val = document.getElementById('filter-periode').value;
+  window.location.href = val ? '?periode=' + val : '?';
+}
+  </script>
+{% endblock extra_js %}

@@ -1,0 +1,203 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control"
+          content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>{% block title %}SPK Rekrutmen Guru{% endblock %} — Yayasan Al Hasanah</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body>
+    <div class="wrapper">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-icon"></div>
+          <div>
+            <div class="sidebar-logo-text">Yayasan Al Hasanah</div>
+            <div class="sidebar-logo-sub">SPK Rekrutmen Guru</div>
+          </div>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="sidebar-section-label">MAIN</div>
+          <a href="{% url 'dashboard' %}"
+             class="sidebar-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="ti ti-layout-dashboard"></i> Dashboard
+          </a>
+          <a href="{% url 'pipeline' %}"
+             class="sidebar-item {% if request.resolver_match.url_name == 'pipeline' %}active{% endif %}">
+            <i class="ti ti-git-branch"></i> Pipeline
+          </a>
+          <a href="{% url 'input_kandidat' %}"
+             class="sidebar-item {% if request.resolver_match.url_name == 'input_kandidat' %}active{% endif %}">
+            <i class="ti ti-user-plus"></i> Input Kandidat
+          </a>
+          <div class="sidebar-section-label">TAHAP SELEKSI</div>
+          <a href="{% url 'administrasi' %}"
+             class="sidebar-item {% if request.resolver_match.url_name == 'administrasi' %}active{% endif %}">
+            <i class="ti ti-file-check"></i> Administrasi
+          </a>
+          <a href="{% url 'psikotes' %}"
+             class="sidebar-item {% if request.resolver_match.url_name == 'psikotes' %}active{% endif %}">
+            <i class="ti ti-brain"></i> Psikotes
+          </a>
+          <a href="{% url 'kompetensi' %}"
+             class="sidebar-item {% if request.resolver_match.url_name == 'kompetensi' %}active{% endif %}">
+            <i class="ti ti-book"></i> Kompetensi
+          </a>
+          <a href="{% url 'wawancara' %}"
+             class="sidebar-item {% if request.resolver_match.url_name == 'wawancara' %}active{% endif %}">
+            <i class="ti ti-message-circle"></i> Wawancara
+          </a>
+          <a href="{% url 'micro_teaching' %}"
+             class="sidebar-item {% if request.resolver_match.url_name == 'micro_teaching' %}active{% endif %}">
+            <i class="ti ti-chalkboard"></i> Micro Teaching
+          </a>
+          <div class="sidebar-section-label">EVALUASI & HASIL</div>
+          <a href="{% url 'evaluasi_marcos' %}"
+             class="sidebar-item {% if request.resolver_match.url_name == 'evaluasi_marcos' %}active{% endif %}">
+            <i class="ti ti-chart-bar"></i> Evaluasi
+          </a>
+          <a href="{% url 'prediksi_xgboost' %}"
+             class="sidebar-item {% if request.resolver_match.url_name == 'prediksi_xgboost' %}active{% endif %}">
+            <i class="ti ti-cpu"></i> Prediksi
+          </a>
+          <a href="{% url 'hasil' %}"
+             class="sidebar-item {% if request.resolver_match.url_name == 'hasil' %}active{% endif %}">
+            <i class="ti ti-trophy"></i> Hasil
+          </a>
+        </nav>
+      </aside>
+      <!-- Main -->
+      <div class="main">
+        <!-- Topbar -->
+        <div class="topbar">
+          <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+          <div class="topbar-right">
+            <div class="search-box">
+              <i class="ti ti-search"></i>
+              <input type="text"
+                     id="global-search"
+                     placeholder="Cari kandidat..."
+                     oninput="searchKandidat(this.value)">
+            </div>
+            <div class="topbar-notif">
+              <i class="ti ti-bell"></i>
+            </div>
+            <div style="position:relative;" id="avatar-wrap">
+              <div class="topbar-avatar"
+                   onclick="toggleDropdown()"
+                   style="cursor:pointer">AD</div>
+              <div id="avatar-dropdown"
+                   style="display:none;
+                          position:absolute;
+                          right:0;
+                          top:44px;
+                          background:#fff;
+                          border:1px solid var(--border);
+                          border-radius:12px;
+                          box-shadow:0 4px 16px rgba(0,0,0,0.1);
+                          min-width:200px;
+                          z-index:200;
+                          overflow:hidden">
+                <div style="padding:12px 16px;border-bottom:1px solid var(--border);">
+                  <div style="font-size:13px;font-weight:600;">Admin</div>
+                  <div style="font-size:11px;color:var(--text-muted);">Yayasan Al Hasanah</div>
+                </div>
+                <a href="{% url 'manajemen_kandidat' %}"
+                   style="display:flex;
+                          align-items:center;
+                          gap:10px;
+                          padding:10px 16px;
+                          font-size:13px;
+                          color:var(--text-primary);
+                          border-bottom:1px solid var(--border)">
+                  <i class="ti ti-users" style="font-size:16px;color:var(--text-muted);"></i> Manajemen Kandidat
+                </a>
+                <a href="{% url 'manajemen_kriteria' %}"
+                   style="display:flex;
+                          align-items:center;
+                          gap:10px;
+                          padding:10px 16px;
+                          font-size:13px;
+                          color:var(--text-primary);
+                          border-bottom:1px solid var(--border)">
+                  <i class="ti ti-adjustments"
+                     style="font-size:16px;
+                            color:var(--text-muted)"></i> Manajemen Kriteria
+                </a>
+                <a href="{% url 'training_model' %}"
+                   style="display:flex;
+                          align-items:center;
+                          gap:10px;
+                          padding:10px 16px;
+                          font-size:13px;
+                          color:var(--text-primary);
+                          border-bottom:1px solid var(--border)">
+                  <i class="ti ti-settings"
+                     style="font-size:16px;
+                            color:var(--text-muted)"></i> Training Model
+                </a>
+                <a href="{% url 'fucom_upload' %}"
+                   style="display:flex;
+                          align-items:center;
+                          gap:10px;
+                          padding:10px 16px;
+                          font-size:13px;
+                          color:var(--text-primary);
+                          border-bottom:1px solid var(--border)">
+                  <i class="ti ti-calculator"
+                     style="font-size:16px;
+                            color:var(--text-muted)"></i> Bobot FUCOM
+                </a>
+                <a href="{% url 'logout' %}"
+                   style="display:flex;
+                          align-items:center;
+                          gap:10px;
+                          padding:10px 16px;
+                          font-size:13px;
+                          color:#b42318">
+                  <i class="ti ti-logout" style="font-size:16px;"></i> Logout
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Content -->
+        <div class="content">
+          {% block content %}{% endblock %}
+        </div>
+      </div>
+    </div>
+    {% block extra_js %}{% endblock %}
+    <script>
+      function searchKandidat(query) {
+        const q = query.toLowerCase();
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(q) ? '' : 'none';
+        });
+      }
+
+      function toggleDropdown() {
+      var d = document.getElementById('avatar-dropdown');
+      d.style.display = d.style.display === 'none' ? 'block' : 'none';
+      }
+      document.addEventListener('click', function(e) {
+      var wrap = document.getElementById('avatar-wrap');
+      if (wrap && !wrap.contains(e.target)) {
+      document.getElementById('avatar-dropdown').style.display = 'none';
+      }
+      });
+      
+    </script>
+  </body>
+</html>

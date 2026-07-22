@@ -1,0 +1,144 @@
+{% extends 'sistem/base.html' %}
+{% block title %}Detail Prediksi{% endblock %}
+{% block page_title %}Detail Prediksi{% endblock %}
+{% block extra_css %}
+  <style>
+.donut-wrap {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin: 16px auto;
+}
+.donut-wrap canvas { position: absolute; top: 0; left: 0; }
+.donut-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock extra_css %}
+{% block content %}
+  <div style="margin-bottom:16px;">
+    <a href="{% url 'prediksi_xgboost' %}"
+       style="font-size:13px;
+              color:var(--teal)">
+      <i class="ti ti-arrow-left"></i> Kembali ke Prediksi
+    </a>
+  </div>
+  {% if error %}
+    <div style="background:#fde8e8;
+                color:#b42318;
+                padding:12px 16px;
+                border-radius:8px">⚠ {{ error }}</div>
+  {% endif %}
+  {% if detail %}
+    <div style="display:grid;
+                grid-template-columns:280px 1fr;
+                gap:16px;
+                align-items:start">
+      <!-- Kiri: hasil prediksi -->
+      <div class="card" style="text-align:center;">
+        <div class="card-title" style="text-align:left;">Hasil Prediksi</div>
+        <div style="font-size:12px;
+                    color:var(--text-muted);
+                    text-align:left;
+                    margin-bottom:12px">{{ kandidat.nama }} · {{ kandidat.bidang_studi }}</div>
+        <div class="donut-wrap">
+          <canvas id="donutChart" width="160" height="160"></canvas>
+          <div class="donut-center">
+            <div style="font-size:24px;
+                        font-weight:700;
+                        color:{% if detail.prediksi == 'Layak' %}#1a7a3c{% else %}#b42318{% endif %}">
+              {{ detail.prob_layak }}%
+            </div>
+            <div style="font-size:10px;color:var(--text-muted);">Probabilitas Layak</div>
+          </div>
+        </div>
+        <div style="margin:12px 0;
+                    padding:10px;
+                    border-radius:8px;
+                    background:{% if detail.prediksi == 'Layak' %}#e6f4ea{% else %}#fde8e8{% endif %}">
+          <div style="font-size:14px;
+                      font-weight:600;
+                      color:{% if detail.prediksi == 'Layak' %}#1a7a3c{% else %}#b42318{% endif %}">
+            {% if detail.prediksi == 'Layak' %}
+              <i class="ti ti-check-circle"></i> Layak
+            {% else %}
+              <i class="ti ti-x-circle"></i> Tidak Layak
+            {% endif %}
+          </div>
+        </div>
+        <div style="display:grid;
+                    grid-template-columns:1fr 1fr;
+                    gap:8px;
+                    margin-top:8px">
+          <div style="background:#e6f4ea;border-radius:8px;padding:10px;">
+            <div style="font-size:16px;font-weight:700;color:#1a7a3c;">{{ detail.prob_layak }}%</div>
+            <div style="font-size:11px;color:#1a7a3c;">Layak</div>
+          </div>
+          <div style="background:#fde8e8;border-radius:8px;padding:10px;">
+            <div style="font-size:16px;font-weight:700;color:#b42318;">{{ detail.prob_tidak }}%</div>
+            <div style="font-size:11px;color:#b42318;">Tidak Layak</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;
+                    padding-top:12px;
+                    border-top:1px solid var(--border);
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center">
+          <span style="font-size:12px;color:var(--text-muted);">Nilai Utilitas MARCOS (Ki)</span>
+          <span style="font-size:14px;font-weight:700;color:var(--teal);">{{ detail.nilai_utilitas }}</span>
+        </div>
+      </div>
+      <!-- Kanan: kontribusi fitur -->
+      <div class="card">
+        <div class="card-title">Fitur Input Model (Nilai Kriteria × Bobot FUCOM)</div>
+        <div class="card-sub">Kontribusi tiap kriteria terhadap prediksi</div>
+        <div style="display:grid;
+                    grid-template-columns:repeat(3,1fr);
+                    gap:10px;
+                    margin-top:12px">
+          {% for k in detail.kontribusi %}
+            <div style="background:#f8fafc;
+                        border:1px solid var(--border);
+                        border-radius:10px;
+                        padding:12px 14px">
+              <div style="display:flex;
+                          justify-content:space-between;
+                          align-items:center;
+                          margin-bottom:6px">
+                <span style="font-size:11px;color:var(--teal);font-weight:600;">{{ k.kode }}</span>
+                <span style="font-size:11px;color:var(--text-muted);">×{{ k.bobot }}</span>
+              </div>
+              <div style="font-size:22px;font-weight:700;color:var(--text-primary);">{{ k.nilai }}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">kontribusi {{ k.kontribusi }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+{% endblock content %}
+{% block extra_js %}
+  <script>
+const ctx = document.getElementById('donutChart').getContext('2d');
+new Chart(ctx, {
+  type: 'doughnut',
+  data: {
+    datasets: [{
+      data: [{{ detail.prob_layak }}, {{ detail.prob_tidak }}],
+      backgroundColor: ['#1a7a3c', '#fde8e8'],
+      borderWidth: 0,
+      cutout: '75%',
+    }]
+  },
+  options: {
+    responsive: false,
+    plugins: { legend: { display: false }, tooltip: { enabled: false } }
+  }
+});
+  </script>
+{% endblock extra_js %}

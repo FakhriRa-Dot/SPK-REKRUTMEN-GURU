@@ -1,0 +1,220 @@
+{% extends 'sistem/base.html' %}
+{% block title %}Manajemen Kandidat{% endblock %}
+{% block page_title %}Manajemen Kandidat{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Manajemen Kandidat</h1>
+    <p>Kelola semua data kandidat yang terdaftar di sistem</p>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header">
+      <h3>Daftar Semua Kandidat</h3>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <select id="filter-status"
+                class="form-control"
+                style="width:150px;
+                       height:32px;
+                       font-size:12px"
+                onchange="filterStatus()">
+          <option value="">Semua Status</option>
+          <option value="aktif" {% if status_aktif == 'aktif' %}selected{% endif %}>Aktif</option>
+          <option value="gugur" {% if status_aktif == 'gugur' %}selected{% endif %}>Gugur</option>
+          <option value="selesai" {% if status_aktif == 'selesai' %}selected{% endif %}>Selesai</option>
+        </select>
+        <select id="filter-periode"
+                class="form-control"
+                style="width:160px;
+                       height:32px;
+                       font-size:12px"
+                onchange="filterPeriode()">
+          <option value="">Semua Periode</option>
+          {% for p in periode_list %}
+            <option value="{{ p.id }}"
+                    {% if periode_aktif == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nama }}</option>
+          {% endfor %}
+        </select>
+        <a href="{% url 'input_kandidat' %}"
+           class="btn btn-primary"
+           style="font-size:12px">
+          <i class="ti ti-plus"></i> Tambah
+        </a>
+      </div>
+    </div>
+    <div style="max-height:600px;overflow-y:auto;">
+      <table>
+        <thead style="position:sticky;top:0;z-index:1;">
+          <tr>
+            <th>Nama Kandidat</th>
+            <th>Jenjang</th>
+            <th>Bidang Studi</th>
+            <th>Periode</th>
+            <th>Tahap</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for k in kandidat_list %}
+            <tr>
+              <td>
+                <div style="font-weight:500;">{{ k.nama }}</div>
+                <div style="font-size:11px;color:var(--text-muted);">IPK: {{ k.ipk|default:"-" }}</div>
+              </td>
+              <td>{{ k.jenjang_pendidikan|default:"-" }}</td>
+              <td>{{ k.bidang_studi|default:"-" }}</td>
+              <td style="font-size:12px;color:var(--text-muted);">{{ k.periode|default:"-" }}</td>
+              <td>
+                {% if k.status_tahap_4 == 'hadir' %}
+                  <span class="badge badge-green">Selesai</span>
+                {% elif k.status_tahap_4 == 'dipanggil' %}
+                  <span class="badge badge-teal">Micro Teaching</span>
+                {% elif k.status_tahap_4 == 'gugur' %}
+                  <span class="badge badge-red">Gugur</span>
+                {% elif k.status_tahap_3 == 'dipanggil' %}
+                  <span class="badge badge-teal">Wawancara</span>
+                {% elif k.status_tahap_3 == 'gugur' %}
+                  <span class="badge badge-red">Gugur</span>
+                {% elif k.status_tahap_2 == 'hadir' %}
+                  <span class="badge badge-teal">Kompetensi</span>
+                {% elif k.status_tahap_2 == 'dipanggil' %}
+                  <span class="badge badge-teal">Psikotes</span>
+                {% elif k.status_tahap_2 == 'gugur' %}
+                  <span class="badge badge-red">Gugur</span>
+                {% else %}
+                  <span class="badge badge-amber">Administrasi</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if k.label == 'diterima' %}
+                  <span class="badge badge-green">Diterima</span>
+                {% elif k.label == 'tidak_diterima' %}
+                  <span class="badge badge-red">Tidak Diterima</span>
+                {% else %}
+                  <span class="badge badge-gray">-</span>
+                {% endif %}
+              </td>
+              <td>
+                <div style="display:flex;gap:6px;">
+                  <a href="{% url 'detail_hasil' k.id %}"
+                     class="btn btn-secondary"
+                     style="padding:4px 10px;
+                            font-size:12px">
+                    <i class="ti ti-eye"></i>
+                  </a>
+                  <button onclick="konfirmasiHapus({{ k.id }}, '{{ k.nama }}')"
+                          class="btn btn-danger"
+                          style="padding:4px 10px;
+                                 font-size:12px">
+                    <i class="ti ti-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="7"
+                  style="text-align:center;
+                         color:var(--text-muted);
+                         padding:20px">Belum ada kandidat</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex;
+                align-items:center;
+                justify-content:space-between;
+                padding:14px 20px;
+                border-top:1px solid var(--border)">
+      <span style="font-size:13px;color:var(--text-muted);">
+        Menampilkan {{ kandidat_list.start_index }}-{{ kandidat_list.end_index }}
+        dari {{ kandidat_list.paginator.count }} kandidat
+      </span>
+      <div style="display:flex;gap:4px;">
+        {% if kandidat_list.has_previous %}
+          <a href="?page=1&periode={{ periode_aktif }}&status={{ status_aktif }}"
+             class="btn btn-secondary"
+             style="padding:5px 10px;
+                    font-size:12px">«</a>
+          <a href="?page={{ kandidat_list.previous_page_number }}&periode={{ periode_aktif }}&status={{ status_aktif }}"
+             class="btn btn-secondary"
+             style="padding:5px 10px;
+                    font-size:12px">Previous</a>
+        {% endif %}
+        {% for num in kandidat_list.paginator.page_range %}
+          {% if kandidat_list.number == num %}
+            <span class="btn btn-primary" style="padding:5px 10px;font-size:12px;">{{ num }}</span>
+          {% elif num > kandidat_list.number|add:'-3' and num < kandidat_list.number|add:'3' %}
+            <a href="?page={{ num }}&periode={{ periode_aktif }}&status={{ status_aktif }}"
+               class="btn btn-secondary"
+               style="padding:5px 10px;
+                      font-size:12px">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if kandidat_list.has_next %}
+          <a href="?page={{ kandidat_list.next_page_number }}&periode={{ periode_aktif }}&status={{ status_aktif }}"
+             class="btn btn-secondary"
+             style="padding:5px 10px;
+                    font-size:12px">Next</a>
+          <a href="?page={{ kandidat_list.paginator.num_pages }}&periode={{ periode_aktif }}&status={{ status_aktif }}"
+             class="btn btn-secondary"
+             style="padding:5px 10px;
+                    font-size:12px">»</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <!-- Modal Hapus -->
+  <div id="modal-hapus"
+       style="display:none;
+              position:fixed;
+              inset:0;
+              background:rgba(0,0,0,0.4);
+              z-index:999;
+              align-items:center;
+              justify-content:center">
+    <div style="background:#fff;
+                border-radius:12px;
+                padding:24px;
+                max-width:400px;
+                width:90%">
+      <div style="font-size:16px;
+                  font-weight:600;
+                  margin-bottom:8px;
+                  color:#b42318">Hapus Kandidat</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">
+        Hapus <strong id="nama-hapus"></strong> dari sistem? Semua data nilai dan hasil seleksinya juga akan dihapus.
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button onclick="tutupModal()" class="btn btn-secondary">Batal</button>
+        <form id="form-hapus" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="aksi" value="hapus">
+          <button type="submit" class="btn btn-danger">Ya, Hapus</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+{% block extra_js %}
+  <script>
+function filterStatus() {
+  const status = document.getElementById('filter-status').value;
+  const periode = document.getElementById('filter-periode').value;
+  window.location.href = '?status=' + status + '&periode=' + periode;
+}
+function filterPeriode() {
+  const status = document.getElementById('filter-status').value;
+  const periode = document.getElementById('filter-periode').value;
+  window.location.href = '?status=' + status + '&periode=' + periode;
+}
+function konfirmasiHapus(id, nama) {
+  document.getElementById('nama-hapus').textContent = nama;
+  document.getElementById('form-hapus').action = '/kandidat/' + id + '/hapus/';
+  document.getElementById('modal-hapus').style.display = 'flex';
+}
+function tutupModal() {
+  document.getElementById('modal-hapus').style.display = 'none';
+}
+  </script>
+{% endblock extra_js %}

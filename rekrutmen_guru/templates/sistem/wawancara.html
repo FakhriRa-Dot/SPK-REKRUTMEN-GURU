@@ -1,0 +1,213 @@
+{% extends 'sistem/base.html' %}
+{% block title %}Wawancara{% endblock %}
+{% block page_title %}Wawancara{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Tahap Wawancara</h1>
+    <p>Kandidat yang sedang dinilai komitmen dan ruhiyah</p>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header">
+      <h3>Daftar Kandidat</h3>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Nama Kandidat</th>
+          <th>Komitmen</th>
+          <th>Ruhiyah</th>
+          <th>Catatan</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for k in kandidat_list %}
+          <tr>
+            <td>
+              <div style="font-weight:500;">{{ k.nama }}</div>
+              <div style="font-size:11px;color:var(--text-muted);">{{ k.bidang_studi }}</div>
+            </td>
+            <td>
+              {% for nk in k.nilai.all %}
+                {% if nk.kriteria.nama == 'Komitmen (Wawancara)' %}
+                  {% if nk.nilai <= 50 %}
+                    <span class="badge badge-red">Tidak Disarankan ({{ nk.nilai }})</span>
+                  {% elif nk.nilai <= 75 %}
+                    <span class="badge badge-amber">Dipertimbangkan ({{ nk.nilai }})</span>
+                  {% else %}
+                    <span class="badge badge-green">Disarankan ({{ nk.nilai }})</span>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            </td>
+            <td>
+              {% for nk in k.nilai.all %}
+                {% if nk.kriteria.nama == 'Ruhiyah (Keagamaan)' %}
+                  {% if nk.nilai <= 45 %}
+                    <span class="badge badge-red">Tidak Lulus ({{ nk.nilai }})</span>
+                  {% else %}
+                    <span class="badge badge-green">Lulus ({{ nk.nilai }})</span>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            </td>
+            <td style="font-size:12px;color:var(--text-muted);max-width:150px;">
+              {{ k.note_wawancara|default:"-"|truncatechars:50 }}
+            </td>
+            <td>
+              <div style="display:flex;gap:6px;">
+                <a href="{% url 'input_nilai_tahap' k.id 4 %}"
+                   class="btn btn-secondary"
+                   style="padding:5px 10px;
+                          font-size:12px">
+                  <i class="ti ti-edit"></i> Input Nilai
+                </a>
+                <button onclick="konfirmasiLanjut({{ k.id }}, '{{ k.nama }}')"
+                        class="btn btn-primary"
+                        style="padding:5px 10px;
+                               font-size:12px">
+                  <i class="ti ti-arrow-right"></i> Lanjut
+                </button>
+                <button onclick="konfirmasiGugur({{ k.id }}, '{{ k.nama }}')"
+                        class="btn btn-danger"
+                        style="padding:5px 10px;
+                               font-size:12px">
+                  <i class="ti ti-x"></i> Gugur
+                </button>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5"
+                style="text-align:center;
+                       color:var(--text-muted);
+                       padding:20px">Belum ada kandidat di tahap ini</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="display:flex;
+                align-items:center;
+                justify-content:space-between;
+                padding:14px 20px;
+                border-top:1px solid var(--border)">
+      <span style="font-size:13px;color:var(--text-muted);">
+        Menampilkan {{ kandidat_list.start_index }}-{{ kandidat_list.end_index }}
+        dari {{ kandidat_list.paginator.count }} kandidat
+      </span>
+      <div style="display:flex;gap:4px;">
+        {% if kandidat_list.has_previous %}
+          <a href="?page=1"
+             class="btn btn-secondary"
+             style="padding:5px 10px;
+                    font-size:12px">«</a>
+          <a href="?page={{ kandidat_list.previous_page_number }}"
+             class="btn btn-secondary"
+             style="padding:5px 10px;
+                    font-size:12px">Previous</a>
+        {% endif %}
+        {% for num in kandidat_list.paginator.page_range %}
+          {% if kandidat_list.number == num %}
+            <span class="btn btn-primary" style="padding:5px 10px;font-size:12px;">{{ num }}</span>
+          {% elif num > kandidat_list.number|add:'-3' and num < kandidat_list.number|add:'3' %}
+            <a href="?page={{ num }}"
+               class="btn btn-secondary"
+               style="padding:5px 10px;
+                      font-size:12px">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if kandidat_list.has_next %}
+          <a href="?page={{ kandidat_list.next_page_number }}"
+             class="btn btn-secondary"
+             style="padding:5px 10px;
+                    font-size:12px">Next</a>
+          <a href="?page={{ kandidat_list.paginator.num_pages }}"
+             class="btn btn-secondary"
+             style="padding:5px 10px;
+                    font-size:12px">»</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <!-- Modal Konfirmasi Lanjut -->
+  <div id="modal-lanjut"
+       style="display:none;
+              position:fixed;
+              inset:0;
+              background:rgba(0,0,0,0.4);
+              z-index:999;
+              align-items:center;
+              justify-content:center">
+    <div style="background:#fff;
+                border-radius:12px;
+                padding:24px;
+                max-width:400px;
+                width:90%">
+      <div style="font-size:16px;font-weight:600;margin-bottom:8px;">Konfirmasi Lanjut</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">
+        Lanjutkan <strong id="nama-lanjut"></strong> ke tahap Micro Teaching?
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button onclick="tutupModal('modal-lanjut')" class="btn btn-secondary">Batal</button>
+        <form id="form-lanjut" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="aksi" value="lanjut">
+          <input type="hidden" name="tahap" value="3">
+          <input type="hidden" name="next_url" value="wawancara">
+          <button type="submit" class="btn btn-primary">Ya, Lanjutkan</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <!-- Modal Konfirmasi Gugur -->
+  <div id="modal-gugur"
+       style="display:none;
+              position:fixed;
+              inset:0;
+              background:rgba(0,0,0,0.4);
+              z-index:999;
+              align-items:center;
+              justify-content:center">
+    <div style="background:#fff;
+                border-radius:12px;
+                padding:24px;
+                max-width:400px;
+                width:90%">
+      <div style="font-size:16px;
+                  font-weight:600;
+                  margin-bottom:8px;
+                  color:#b42318">Konfirmasi Gugur</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">
+        Tandai <strong id="nama-gugur"></strong> sebagai gugur di tahap Wawancara?
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button onclick="tutupModal('modal-gugur')" class="btn btn-secondary">Batal</button>
+        <form id="form-gugur" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="aksi" value="gugur">
+          <input type="hidden" name="tahap" value="3">
+          <input type="hidden" name="next_url" value="wawancara">
+          <button type="submit" class="btn btn-danger">Ya, Gugurkan</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+{% block extra_js %}
+  <script>
+function konfirmasiLanjut(id, nama) {
+  document.getElementById('nama-lanjut').textContent = nama;
+  document.getElementById('form-lanjut').action = '/kandidat/' + id + '/update-status/';
+  document.getElementById('modal-lanjut').style.display = 'flex';
+}
+function konfirmasiGugur(id, nama) {
+  document.getElementById('nama-gugur').textContent = nama;
+  document.getElementById('form-gugur').action = '/kandidat/' + id + '/update-status/';
+  document.getElementById('modal-gugur').style.display = 'flex';
+}
+function tutupModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+  </script>
+{% endblock extra_js %}

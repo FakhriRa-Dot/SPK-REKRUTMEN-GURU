@@ -1,0 +1,428 @@
+{% extends 'sistem/base.html' %}
+{% block title %}Detail Hasil{% endblock %}
+{% block page_title %}Detail Hasil{% endblock %}
+{% block extra_css %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock extra_css %}
+{% block content %}
+  <div style="margin-bottom:16px;">
+    <a href="{% url 'hasil' %}" style="font-size:13px;color:var(--teal);">
+      <i class="ti ti-arrow-left"></i> Kembali ke Hasil
+    </a>
+  </div>
+  <div style="display:grid;
+              grid-template-columns:300px 1fr;
+              gap:16px;
+              align-items:start">
+    <!-- Kiri: profil + hasil -->
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <!-- Profil kandidat -->
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <div style="width:52px;
+                      height:52px;
+                      border-radius:50%;
+                      background:var(--teal-light);
+                      display:flex;
+                      align-items:center;
+                      justify-content:center;
+                      flex-shrink:0">
+            {% if kandidat.foto %}
+              <img src="{{ kandidat.foto.url }}"
+                   style="width:100%;
+                          height:100%;
+                          border-radius:50%;
+                          object-fit:cover">
+            {% else %}
+              <i class="ti ti-user" style="font-size:24px;color:var(--teal);"></i>
+            {% endif %}
+          </div>
+          <div>
+            <div style="font-size:15px;font-weight:600;">{{ kandidat.nama }}</div>
+            <div style="font-size:12px;color:var(--text-muted);">
+              {{ kandidat.jenjang_pendidikan }} — {{ kandidat.bidang_studi }}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;
+                      justify-content:space-between;
+                      padding:6px 0;
+                      border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;color:var(--text-muted);">IPK</span>
+            <span style="font-size:12px;font-weight:500;">{{ kandidat.ipk|default:"-" }}</span>
+          </div>
+          <div style="display:flex;
+                      justify-content:space-between;
+                      padding:6px 0;
+                      border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;color:var(--text-muted);">Pengalaman</span>
+            <span style="font-size:12px;font-weight:500;">{{ kandidat.pengalaman_mengajar }} tahun</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;">
+            <span style="font-size:12px;color:var(--text-muted);">Periode</span>
+            <span style="font-size:12px;font-weight:500;">{{ kandidat.periode|default:"-" }}</span>
+          </div>
+        </div>
+      </div>
+      <!-- Hasil MARCOS -->
+      <!-- Hasil MARCOS -->
+      <div class="card">
+        <div class="card-title">Hasil MARCOS</div>
+        <div style="display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    padding:10px 0;
+                    border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;color:var(--text-muted);">Ranking</span>
+          <span style="font-size:20px;font-weight:700;color:var(--teal);">#{{ hasil.ranking|default:"-" }}</span>
+        </div>
+        <div style="display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    padding:10px 0;
+                    border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;color:var(--text-muted);">Nilai Utilitas (Ki)</span>
+          <span style="font-size:18px;font-weight:700;color:var(--teal);">{{ hasil.nilai_utilitas|default:"-" }}</span>
+        </div>
+        <!-- Highlight rata-rata Ki -->
+        <div style="margin-top:10px;
+                    padding:10px 12px;
+                    border-radius:8px;
+                    background:{% if di_atas_rata %}#e6f4ea{% else %}#fde8e8{% endif %};
+                    border-left:3px solid {% if di_atas_rata %}#1a7a3c{% else %}#b42318{% endif %}">
+          <div style="font-size:12px;
+                      font-weight:600;
+                      color:{% if di_atas_rata %}#1a7a3c{% else %}#b42318{% endif %}">
+            {% if di_atas_rata %}
+              <i class="ti ti-trending-up"></i> Di atas rata-rata
+            {% else %}
+              <i class="ti ti-trending-down"></i> Di bawah rata-rata
+            {% endif %}
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">
+            Rata-rata Ki semua kandidat:
+            <strong>{{ rata_rata_ki }}</strong>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+            Ki kandidat ini:
+            <strong style="color:{% if di_atas_rata %}#1a7a3c{% else %}#b42318{% endif %}">{{ hasil.nilai_utilitas }}</strong>
+          </div>
+        </div>
+      </div>
+      <!-- Hasil XGBoost -->
+      {% if detail %}
+        <div class="card" style="text-align:center;">
+          <div class="card-title" style="text-align:left;">Hasil Prediksi XGBoost</div>
+          <div style="position:relative;width:140px;height:140px;margin:16px auto;">
+            <canvas id="donutChart" width="140" height="140"></canvas>
+            <div style="position:absolute;
+                        top:50%;
+                        left:50%;
+                        transform:translate(-50%,-50%);
+                        text-align:center">
+              <div style="font-size:22px;
+                          font-weight:700;
+                          color:{% if detail.prediksi == 'Layak' %}#1a7a3c{% else %}#b42318{% endif %}">
+                {{ detail.prob_layak }}%
+              </div>
+              <div style="font-size:10px;color:var(--text-muted);">Prob. Layak</div>
+            </div>
+          </div>
+          <div style="padding:10px;
+                      border-radius:8px;
+                      margin-bottom:12px;
+                      background:{% if detail.prediksi == 'Layak' %}#e6f4ea{% else %}#fde8e8{% endif %}">
+            <div style="font-size:14px;
+                        font-weight:600;
+                        color:{% if detail.prediksi == 'Layak' %}#1a7a3c{% else %}#b42318{% endif %}">
+              {% if detail.prediksi == 'Layak' %}
+                <i class="ti ti-check-circle"></i> Layak
+              {% else %}
+                <i class="ti ti-x-circle"></i> Tidak Layak
+              {% endif %}
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="background:#e6f4ea;border-radius:8px;padding:8px;">
+              <div style="font-size:16px;font-weight:700;color:#1a7a3c;">{{ detail.prob_layak }}%</div>
+              <div style="font-size:11px;color:#1a7a3c;">Layak</div>
+            </div>
+            <div style="background:#fde8e8;border-radius:8px;padding:8px;">
+              <div style="font-size:16px;font-weight:700;color:#b42318;">{{ detail.prob_tidak }}%</div>
+              <div style="font-size:11px;color:#b42318;">Tidak Layak</div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+    <!-- Kanan: nilai per tahap + kontribusi fitur -->
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <!-- Nilai per tahap -->
+      <div class="card">
+        <div class="card-title">Nilai Per Tahap Seleksi</div>
+        <div class="card-sub">Rekap nilai kandidat di setiap tahap</div>
+        <div style="display:grid;
+                    grid-template-columns:1fr 1fr;
+                    gap:10px;
+                    margin-top:12px">
+          <div style="background:#f8fafc;border-radius:10px;padding:14px;">
+            <div style="font-size:11px;
+                        font-weight:600;
+                        color:var(--teal);
+                        margin-bottom:10px;
+                        text-transform:uppercase;
+                        letter-spacing:0.05em">Tahap 1 — Administrasi</div>
+            {% for nama, nilai in tahap_nilai.administrasi.items %}
+              <div style="display:flex;
+                          justify-content:space-between;
+                          padding:5px 0;
+                          border-bottom:1px solid var(--border)">
+                <span style="font-size:12px;color:var(--text-muted);">{{ nama }}</span>
+                <span style="font-size:12px;font-weight:500;">{{ nilai }}</span>
+              </div>
+            {% endfor %}
+            <div style="display:flex;
+                        justify-content:space-between;
+                        padding:5px 0;
+                        border-bottom:1px solid var(--border)">
+              <span style="font-size:12px;color:var(--text-muted);">Jenjang</span>
+              <span style="font-size:12px;font-weight:500;">{{ kandidat.jenjang_pendidikan|default:"-" }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;">
+              <span style="font-size:12px;color:var(--text-muted);">IPK</span>
+              <span style="font-size:12px;font-weight:500;">{{ kandidat.ipk|default:"-" }}</span>
+            </div>
+          </div>
+          <div style="background:#f8fafc;border-radius:10px;padding:14px;">
+            <div style="font-size:11px;
+                        font-weight:600;
+                        color:var(--teal);
+                        margin-bottom:10px;
+                        text-transform:uppercase;
+                        letter-spacing:0.05em">Tahap 2 — Psikotes</div>
+            {% for nama, nilai in tahap_nilai.psikotes.items %}
+              <div style="display:flex;
+                          justify-content:space-between;
+                          padding:5px 0;
+                          border-bottom:1px solid var(--border)">
+                <span style="font-size:12px;color:var(--text-muted);">{{ nama }}</span>
+                <span style="font-size:12px;font-weight:500;">
+                  {% for nk in nilai_list %}
+                    {% if nk.kriteria.nama == 'Tes Psikotes' %}
+                      {% if nk.nilai <= 40 %}
+                        <span class="badge badge-red">Tidak Disarankan ({{ nk.nilai }})</span>
+                      {% elif nk.nilai <= 60 %}
+                        <span class="badge badge-amber">Dipertimbangkan ({{ nk.nilai }})</span>
+                      {% else %}
+                        <span class="badge badge-green">Disarankan ({{ nk.nilai }})</span>
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                </span>
+              </div>
+            {% endfor %}
+          </div>
+          <div style="background:#f8fafc;border-radius:10px;padding:14px;">
+            <div style="font-size:11px;
+                        font-weight:600;
+                        color:var(--teal);
+                        margin-bottom:10px;
+                        text-transform:uppercase;
+                        letter-spacing:0.05em">Tahap 3 — Kompetensi</div>
+            {% for nama, nilai in tahap_nilai.kompetensi.items %}
+              <div style="display:flex;
+                          justify-content:space-between;
+                          padding:5px 0;
+                          border-bottom:1px solid var(--border)">
+                <span style="font-size:12px;color:var(--text-muted);">{{ nama }}</span>
+                <span style="font-size:12px;font-weight:500;">{{ nilai }}</span>
+              </div>
+            {% endfor %}
+          </div>
+          <div style="background:#f8fafc;border-radius:10px;padding:14px;">
+            <div style="font-size:11px;
+                        font-weight:600;
+                        color:var(--teal);
+                        margin-bottom:10px;
+                        text-transform:uppercase;
+                        letter-spacing:0.05em">Tahap 4 — Wawancara</div>
+            {% for nama, nilai in tahap_nilai.wawancara.items %}
+              <div style="display:flex;
+                          justify-content:space-between;
+                          padding:5px 0;
+                          border-bottom:1px solid var(--border)">
+                <span style="font-size:12px;color:var(--text-muted);">{{ nama }}</span>
+                <span style="font-size:12px;font-weight:500;">
+                  {% for nk in nilai_list %}
+                    {% if nk.kriteria.nama == 'Komitmen (Wawancara)' %}
+                      {% if nk.nilai <= 50 %}
+                        <span class="badge badge-red">Tidak Disarankan ({{ nk.nilai }})</span>
+                      {% elif nk.nilai <= 75 %}
+                        <span class="badge badge-amber">Dipertimbangkan ({{ nk.nilai }})</span>
+                      {% else %}
+                        <span class="badge badge-green">Disarankan ({{ nk.nilai }})</span>
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                  {% for nk in nilai_list %}
+                    {% if nk.kriteria.nama == 'Ruhiyah (Keagamaan)' %}
+                      {% if nk.nilai <= 45 %}
+                        <span class="badge badge-red">Tidak Lulus ({{ nk.nilai }})</span>
+                      {% else %}
+                        <span class="badge badge-green">Lulus ({{ nk.nilai }})</span>
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                </span>
+              </div>
+            {% endfor %}
+            {% if kandidat.note_wawancara %}
+              <div style="margin-top:8px;
+                          padding:8px;
+                          background:#fff;
+                          border-radius:6px;
+                          font-size:11px;
+                          color:var(--text-muted)">
+                <i class="ti ti-notes"></i> {{ kandidat.note_wawancara }}
+              </div>
+            {% endif %}
+          </div>
+          <div style="background:#f8fafc;
+                      border-radius:10px;
+                      padding:14px;
+                      grid-column:span 2">
+            <div style="font-size:11px;
+                        font-weight:600;
+                        color:var(--teal);
+                        margin-bottom:10px;
+                        text-transform:uppercase;
+                        letter-spacing:0.05em">Tahap 5 — Micro Teaching</div>
+            {% for nama, nilai in tahap_nilai.micro_teaching.items %}
+              <div style="display:flex;
+                          justify-content:space-between;
+                          padding:5px 0;
+                          border-bottom:1px solid var(--border)">
+                <span style="font-size:12px;color:var(--text-muted);">{{ nama }}</span>
+                <span style="font-size:12px;font-weight:500;">{{ nilai }}</span>
+              </div>
+            {% endfor %}
+            {% if kandidat.note_micro_teaching %}
+              <div style="margin-top:8px;
+                          padding:8px;
+                          background:#fff;
+                          border-radius:6px;
+                          font-size:11px;
+                          color:var(--text-muted)">
+                <i class="ti ti-notes"></i> {{ kandidat.note_micro_teaching }}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <!-- Kontribusi fitur XGBoost -->
+      {% if detail %}
+        <div class="card">
+          <div class="card-title">Kontribusi Fitur (Nilai × Bobot FUCOM)</div>
+          <div class="card-sub">Pengaruh tiap kriteria terhadap prediksi XGBoost</div>
+          <div style="display:grid;
+                      grid-template-columns:repeat(4,1fr);
+                      gap:8px;
+                      margin-top:12px">
+            {% for k in detail.kontribusi %}
+              <div style="background:#f8fafc;
+                          border:1px solid var(--border);
+                          border-radius:10px;
+                          padding:10px 12px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                  <span style="font-size:10px;color:var(--teal);font-weight:600;">{{ k.kode }}</span>
+                  <span style="font-size:10px;color:var(--text-muted);">×{{ k.bobot }}</span>
+                </div>
+                <div style="font-size:18px;font-weight:700;color:var(--text-primary);">{{ k.nilai }}</div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">kontribusi {{ k.kontribusi }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+      <!-- Keputusan Akhir -->
+      {% if kandidat.status_tahap_4 == 'hadir' and hasil and hasil.nilai_utilitas and hasil.prediksi %}
+        <div class="card" style="margin-top:16px;">
+          <div class="card-title">Keputusan Akhir Yayasan</div>
+          <div class="card-sub">
+            Keputusan ini bersifat final dan akan disimpan sebagai data historis
+            untuk training model periode berikutnya.
+          </div>
+          {% if kandidat.keputusan_akhir %}
+            <div style="padding:12px 14px;
+                        border-radius:8px;
+                        margin-bottom:16px;
+                        background:{% if kandidat.keputusan_akhir == 'diterima' %}#e6f4ea{% else %}#fde8e8{% endif %}">
+              <div style="font-size:13px;
+                          font-weight:600;
+                          color:{% if kandidat.keputusan_akhir == 'diterima' %}#1a7a3c{% else %}#b42318{% endif %}">
+                {% if kandidat.keputusan_akhir == 'diterima' %}
+                  <i class="ti ti-check-circle"></i> Kandidat Diterima
+                {% else %}
+                  <i class="ti ti-x-circle"></i> Kandidat Tidak Diterima
+                {% endif %}
+              </div>
+              {% if kandidat.keputusan_tanggal %}
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                  Diputuskan pada {{ kandidat.keputusan_tanggal|date:"d M Y, H:i" }}
+                </div>
+              {% endif %}
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Ubah keputusan jika diperlukan:</div>
+          {% endif %}
+          <form method="post">
+            {% csrf_token %}
+            <div style="display:flex;gap:8px;">
+              <button type="submit"
+                      name="keputusan_akhir"
+                      value="diterima"
+                      class="btn btn-primary"
+                      style="background:#1a7a3c;
+                             flex:1;
+                             justify-content:center"
+                      onclick="return confirm('Konfirmasi terima kandidat {{ kandidat.nama }}?')">
+                <i class="ti ti-check"></i> Terima Kandidat
+              </button>
+              <button type="submit"
+                      name="keputusan_akhir"
+                      value="tidak_diterima"
+                      class="btn btn-danger"
+                      style="flex:1;
+                             justify-content:center"
+                      onclick="return confirm('Konfirmasi tolak kandidat {{ kandidat.nama }}?')">
+                <i class="ti ti-x"></i> Tolak Kandidat
+              </button>
+            </div>
+          </form>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock content %}
+{% block extra_js %}
+  {% if detail %}
+    <script>
+const ctx = document.getElementById('donutChart').getContext('2d');
+new Chart(ctx, {
+  type: 'doughnut',
+  data: {
+    datasets: [{
+      data: [{{ detail.prob_layak }}, {{ detail.prob_tidak }}],
+      backgroundColor: ['#1a7a3c', '#fde8e8'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: false,
+    cutout: '75%',
+    plugins: { legend: { display: false }, tooltip: { enabled: false } }
+  }
+});
+    </script>
+  {% endif %}
+{% endblock extra_js %}

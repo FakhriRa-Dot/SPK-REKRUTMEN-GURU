@@ -1,0 +1,118 @@
+{% extends 'sistem/base.html' %}
+{% block title %}Pipeline{% endblock %}
+{% block page_title %}Pipeline{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Pipeline Rekrutmen</h1>
+    <p>Alur dan status kandidat per tahap seleksi</p>
+  </div>
+  <div style="display:grid;
+              grid-template-columns:repeat(4,1fr);
+              gap:12px;
+              align-items:start">
+    <div style="background:#fff;
+                border-radius:12px;
+                border:1px solid var(--border);
+                overflow:hidden">
+      <div style="background:#2d7d8e;padding:12px 16px;">
+        <div style="color:#fff;font-size:13px;font-weight:600;">Administrasi</div>
+        <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">{{ tahap1.count }} kandidat</div>
+      </div>
+      <div style="padding:12px;display:flex;flex-direction:column;gap:8px;">
+        {% for k in tahap1 %}
+          <div style="background:#f8fafc;
+                      border:1px solid var(--border);
+                      border-radius:8px;
+                      padding:10px 12px">
+            <div style="font-size:12px;font-weight:500;color:var(--text-primary);">{{ k.nama }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">{{ k.bidang_studi }}</div>
+            <div style="margin-top:6px;"><span class="badge badge-teal">Proses</span></div>
+          </div>
+        {% empty %}
+          <div style="text-align:center;
+                      color:var(--text-muted);
+                      font-size:12px;
+                      padding:20px 0">Kosong</div>
+        {% endfor %}
+      </div>
+    </div>
+    <div style="background:#fff;
+                border-radius:12px;
+                border:1px solid var(--border);
+                overflow:hidden">
+      <div style="background:#0e6ba8;padding:12px 16px;">
+        <div style="color:#fff;font-size:13px;font-weight:600;">Psikotes & Kompetensi</div>
+        <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">{{ tahap2.count }} kandidat</div>
+      </div>
+      <div style="padding:12px;display:flex;flex-direction:column;gap:8px;">
+        {% for k in tahap2 %}
+          <div style="background:#f8fafc;
+                      border:1px solid var(--border);
+                      border-radius:8px;
+                      padding:10px 12px">
+            <div style="font-size:12px;font-weight:500;color:var(--text-primary);">{{ k.nama }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">{{ k.bidang_studi }}</div>
+            <div style="margin-top:6px;"><span class="badge badge-teal">Proses</span></div>
+          </div>
+        {% empty %}
+          <div style="text-align:center;
+                      color:var(--text-muted);
+                      font-size:12px;
+                      padding:20px 0">Kosong</div>
+        {% endfor %}
+      </div>
+    </div>
+    <div style="background:#fff;
+                border-radius:12px;
+                border:1px solid var(--border);
+                overflow:hidden">
+      <div style="background:#b45309;padding:12px 16px;">
+        <div style="color:#fff;font-size:13px;font-weight:600;">Wawancara</div>
+        <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">{{ tahap4.count }} kandidat</div>
+      </div>
+      <div style="padding:12px;display:flex;flex-direction:column;gap:8px;">
+        {% for k in tahap4 %}
+          <div style="background:#f8fafc;
+                      border:1px solid var(--border);
+                      border-radius:8px;
+                      padding:10px 12px">
+            <div style="font-size:12px;font-weight:500;color:var(--text-primary);">{{ k.nama }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">{{ k.bidang_studi }}</div>
+            <div style="margin-top:6px;"><span class="badge badge-teal">Proses</span></div>
+          </div>
+        {% empty %}
+          <div style="text-align:center;
+                      color:var(--text-muted);
+                      font-size:12px;
+                      padding:20px 0">Kosong</div>
+        {% endfor %}
+      </div>
+    </div>
+    <div style="background:#fff;
+                border-radius:12px;
+                border:1px solid var(--border);
+                overflow:hidden">
+      <div style="background:#7c3aed;padding:12px 16px;">
+        <div style="color:#fff;font-size:13px;font-weight:600;">Micro Teaching</div>
+        <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">{{ tahap5.count }} kandidat</div>
+      </div>
+      <div style="padding:12px;display:flex;flex-direction:column;gap:8px;">
+        {% for k in tahap5 %}
+          <div style="background:#f8fafc;
+                      border:1px solid var(--border);
+                      border-radius:8px;
+                      padding:10px 12px">
+            <div style="font-size:12px;font-weight:500;color:var(--text-primary);">{{ k.nama }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">{{ k.bidang_studi }}</div>
+            <div style="margin-top:6px;"><span class="badge badge-teal">Proses</span></div>
+          </div>
+        {% empty %}
+          <div style="text-align:center;
+                      color:var(--text-muted);
+                      font-size:12px;
+                      padding:20px 0">Kosong</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endblock content %}

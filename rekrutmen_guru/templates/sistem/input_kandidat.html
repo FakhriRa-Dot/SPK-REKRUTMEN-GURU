@@ -1,0 +1,308 @@
+{% extends 'sistem/base.html' %}
+{% block title %}Input Kandidat{% endblock %}
+{% block page_title %}Input Kandidat{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Input Kandidat</h1>
+    <p>Tambah data kandidat baru</p>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Form Identitas Kandidat</div>
+      <div class="card-sub">Isi data diri kandidat guru</div>
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Foto Kandidat</label>
+          <input type="file"
+                 name="foto"
+                 accept="image/*"
+                 class="form-control"
+                 onchange="previewFoto(this)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap <span style="color:red;">*</span></label>
+          <input type="text"
+                 name="nama"
+                 class="form-control"
+                 placeholder="Contoh: Ahmad Fauzi, S.Pd"
+                 required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Jenjang Pendidikan <span style="color:red;">*</span></label>
+            <select name="jenjang" class="form-control" required>
+              <option value="">Pilih jenjang</option>
+              <option value="SMA">SMA/SMK/MA</option>
+              <option value="D3">D3</option>
+              <option value="D4">D4</option>
+              <option value="S1">S1</option>
+              <option value="S2">S2</option>
+              <option value="S3">S3</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bidang Studi <span style="color:red;">*</span></label>
+            <input type="text"
+                   name="bidang_studi_nama"
+                   class="form-control"
+                   placeholder="Ketik atau pilih bidang studi"
+                   list="bidang-options"
+                   required>
+            <datalist id="bidang-options">
+              {% for b in bidang_list %}
+                <option value="{{ b.nama }}" />
+              {% endfor %}
+            </datalist>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">IPK</label>
+            <input type="number"
+                   name="ipk"
+                   class="form-control"
+                   placeholder="3.75"
+                   step="0.01"
+                   min="0"
+                   max="4">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pengalaman Mengajar (tahun)</label>
+            <input type="number"
+                   name="pengalaman_mengajar"
+                   class="form-control"
+                   placeholder="0"
+                   min="0"
+                   value="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Periode Rekrutmen</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select name="periode" id="select-periode" class="form-control">
+              <option value="">Pilih periode</option>
+              {% for p in periode_list %}
+                <option value="{{ p.id }}">{{ p.nama }}</option>
+              {% endfor %}
+            </select>
+            <button type="button"
+                    onclick="toggleTambahPeriode()"
+                    class="btn btn-secondary"
+                    style="white-space:nowrap;
+                           padding:0 12px;
+                           height:38px;
+                           flex-shrink:0">
+              <i class="ti ti-plus"></i> Baru
+            </button>
+          </div>
+          <div id="form-periode-baru"
+               style="display:none;
+                      margin-top:8px;
+                      display:none;
+                      gap:8px;
+                      align-items:center">
+            <input type="text"
+                   id="input-periode-baru"
+                   class="form-control"
+                   placeholder="Contoh: Juli 2026">
+            <button type="button"
+                    onclick="simpanPeriodeBaru()"
+                    class="btn btn-primary"
+                    style="white-space:nowrap;
+                           padding:0 12px;
+                           height:38px;
+                           flex-shrink:0">Simpan</button>
+            <button type="button"
+                    onclick="tutupTambahPeriode()"
+                    class="btn btn-secondary"
+                    style="padding:0 10px;
+                           height:38px;
+                           flex-shrink:0">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button type="submit" class="btn btn-primary">
+            <i class="ti ti-device-floppy"></i> Simpan Kandidat
+          </button>
+          <a href="{% url 'administrasi' %}" class="btn btn-secondary">Batal</a>
+        </div>
+      </form>
+    </div>
+    <div class="card"
+         style="display:flex;
+                flex-direction:column;
+                align-items:center;
+                justify-content:flex-start;
+                gap:16px">
+      <div class="card-title" style="align-self:flex-start;">Preview Profil Kandidat</div>
+      <div class="card-sub" style="align-self:flex-start;">Pratinjau foto dan identitas</div>
+      <div id="preview-container"
+           style="display:flex;
+                  flex-direction:column;
+                  align-items:center;
+                  gap:12px;
+                  width:100%">
+        <div id="foto-preview"
+             style="width:120px;
+                    height:120px;
+                    border-radius:50%;
+                    background:#e0f5f9;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    overflow:hidden;
+                    border:3px solid var(--teal)">
+          <i class="ti ti-user" style="font-size:48px;color:#2d7d8e;"></i>
+        </div>
+        <div style="text-align:center;">
+          <div id="preview-nama"
+               style="font-size:16px;
+                      font-weight:600;
+                      color:var(--text-primary)">Nama Kandidat</div>
+          <div id="preview-jenjang"
+               style="font-size:13px;
+                      color:var(--text-muted);
+                      margin-top:4px">Jenjang — Bidang Studi</div>
+        </div>
+        <div style="width:100%;
+                    border-top:1px solid var(--border);
+                    padding-top:16px">
+          <div style="display:flex;
+                      justify-content:space-between;
+                      padding:8px 0;
+                      border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;color:var(--text-muted);">IPK</span>
+            <span id="preview-ipk" style="font-size:12px;font-weight:500;">-</span>
+          </div>
+          <div style="display:flex;
+                      justify-content:space-between;
+                      padding:8px 0;
+                      border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;color:var(--text-muted);">Pengalaman</span>
+            <span id="preview-pengalaman" style="font-size:12px;font-weight:500;">0 tahun</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;">
+            <span style="font-size:12px;color:var(--text-muted);">Periode</span>
+            <span id="preview-periode" style="font-size:12px;font-weight:500;">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block extra_js %}
+  <script>
+// Auto-select periode sesuai bulan ini
+const bulanIndonesia = [
+  'Januari','Februari','Maret','April','Mei','Juni',
+  'Juli','Agustus','September','Oktober','November','Desember'
+];
+const now = new Date();
+const bulanIni = bulanIndonesia[now.getMonth()];
+const tahunIni = now.getFullYear().toString();
+
+const periodeSelect = document.querySelector('select[name="periode"]');
+if (periodeSelect) {
+  Array.from(periodeSelect.options).forEach(opt => {
+    if (opt.text.includes(bulanIni) && opt.text.includes(tahunIni)) {
+      opt.selected = true;
+      document.getElementById('preview-periode').textContent = opt.text;
+    }
+  });
+}
+
+// Preview functions
+function previewFoto(input) {
+  if (input.files && input.files[0]) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var preview = document.getElementById('foto-preview');
+      preview.innerHTML = '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;">';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+document.querySelector('input[name="nama"]').addEventListener('input', function() {
+  document.getElementById('preview-nama').textContent = this.value || 'Nama Kandidat';
+});
+
+document.querySelector('select[name="jenjang"]').addEventListener('change', function() {
+  updatePreviewJenjang();
+});
+
+document.querySelector('input[name="bidang_studi_nama"]').addEventListener('input', function() {
+  updatePreviewJenjang();
+});
+
+function updatePreviewJenjang() {
+  var jenjang = document.querySelector('select[name="jenjang"]').value;
+  var bidang = document.querySelector('input[name="bidang_studi_nama"]').value || '-';
+  document.getElementById('preview-jenjang').textContent = (jenjang || '-') + ' — ' + bidang;
+}
+
+document.querySelector('input[name="ipk"]').addEventListener('input', function() {
+  document.getElementById('preview-ipk').textContent = this.value || '-';
+});
+
+document.querySelector('input[name="pengalaman_mengajar"]').addEventListener('input', function() {
+  document.getElementById('preview-pengalaman').textContent = (this.value || '0') + ' tahun';
+});
+
+document.querySelector('select[name="periode"]').addEventListener('change', function() {
+  var text = this.options[this.selectedIndex].text;
+  document.getElementById('preview-periode').textContent = text === 'Pilih periode' ? '-' : text;
+});
+
+function toggleTambahPeriode() {
+  const form = document.getElementById('form-periode-baru');
+  form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+  if (form.style.display === 'flex') {
+    document.getElementById('input-periode-baru').focus();
+  }
+}
+
+function tutupTambahPeriode() {
+  document.getElementById('form-periode-baru').style.display = 'none';
+  document.getElementById('input-periode-baru').value = '';
+}
+
+function simpanPeriodeBaru() {
+  const nama = document.getElementById('input-periode-baru').value.trim();
+  if (!nama) {
+    alert('Nama periode tidak boleh kosong!');
+    return;
+  }
+  fetch('/api/tambah-periode/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    body: JSON.stringify({ nama: nama })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+    // Tambahkan ke dropdown dan pilih otomatis
+    const select = document.getElementById('select-periode');
+    const option = new Option(data.nama, data.id, true, true);
+    select.add(option);
+    select.value = data.id;
+
+    // Update preview
+    document.getElementById('preview-periode').textContent = data.nama;
+
+    // Tutup form
+    tutupTambahPeriode();
+  })
+  .catch(err => alert('Gagal menyimpan periode: ' + err));
+}
+  </script>
+{% endblock %}
