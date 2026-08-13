@@ -223,28 +223,78 @@ def logout_view(request):
     return redirect('login')
 
 # ── Main ──────────────────────────────────────────────────────────────────────
-
 @login_required(login_url='login')
 def dashboard(request):
-    from .models import Kandidat, HasilSeleksi
-    total = Kandidat.objects.count()
-    layak = HasilSeleksi.objects.filter(prediksi='Layak').count()
-    tidak_layak = HasilSeleksi.objects.filter(prediksi='Tidak Layak').count()
-    proses = Kandidat.objects.filter(label__isnull=True).count()
-    kandidat_terbaru = Kandidat.objects.order_by('-created_at')[:5]
-    tahap_count = {
-        'psikotes'   : Kandidat.objects.filter(status_tahap_2='hadir').count(),
-        'kompetensi' : Kandidat.objects.filter(status_tahap_2='hadir').count(),
-        'wawancara'  : Kandidat.objects.filter(status_tahap_3='hadir').count(),
-        'micro'      : Kandidat.objects.filter(status_tahap_4='hadir').count(),
+    from .models import Kandidat, HasilSeleksi, PeriodeRekrutmen
+
+    periode_list = PeriodeRekrutmen.objects.all().order_by('-id')
+
+    periode_id = request.GET.get('periode')
+    if periode_id:
+        periode_aktif = periode_list.filter(id=periode_id).first()
+    else:
+        periode_aktif = periode_list.first()
+
+    kandidat_qs = Kandidat.objects.filter(periode=periode_aktif) if periode_aktif else Kandidat.objects.none()
+
+    total = kandidat_qs.count()
+    layak = HasilSeleksi.objects.filter(kandidat__in=kandidat_qs, prediksi='Layak').count()
+    tidak_layak = HasilSeleksi.objects.filter(kandidat__in=kandidat_qs, prediksi='Tidak Layak').count()
+    proses = kandidat_qs.exclude(
+        status_tahap_1='hadir', status_tahap_2='hadir',
+        status_tahap_3='hadir', status_tahap_4='hadir'
+    ).count()
+
+    # ── Persentase donut chart ──
+    if total > 0:
+        pct_layak = round(layak / total * 100)
+        pct_tidak_layak = round(tidak_layak / total * 100)
+        pct_proses = 100 - pct_layak - pct_tidak_layak
+    else:
+        pct_layak = pct_tidak_layak = pct_proses = 0
+
+    C = 377  # keliling lingkaran r=60 (2*pi*r)
+    len_layak = C * pct_layak / 100
+    len_tidak = C * pct_tidak_layak / 100
+    donut = {
+        'layak_dash': f'{len_layak:.1f} {C}',
+        'layak_offset': '0',
+        'tidak_dash': f'{len_tidak:.1f} {C}',
+        'tidak_offset': f'{-len_layak:.1f}',
     }
+
+    # ── Diagram per tahap ──
+    tahap_raw = {
+        'administrasi': total,
+        'psikotes': kandidat_qs.filter(status_tahap_2='hadir').count(),
+        'wawancara': kandidat_qs.filter(status_tahap_3='hadir').count(),
+        'micro': kandidat_qs.filter(status_tahap_4='hadir').count(),
+    }
+    tahap_count = {
+        k: {'jumlah': v, 'persen': round(v / total * 100) if total else 0}
+        for k, v in tahap_raw.items()
+    }
+    tahap_count['hasil'] = {
+        'jumlah': layak,
+        'persen': round(layak / total * 100) if total else 0,
+    }
+
+    # ── Kandidat baru masuk ──
+    kandidat_baru = kandidat_qs.order_by('-created_at')[:5]
+
     return render(request, 'sistem/dashboard.html', {
+        'periode_list': periode_list,
+        'periode_aktif': periode_aktif,
         'total': total,
         'layak': layak,
         'tidak_layak': tidak_layak,
         'proses': proses,
-        'kandidat_terbaru': kandidat_terbaru,
+        'pct_layak': pct_layak,
+        'pct_tidak_layak': pct_tidak_layak,
+        'pct_proses': pct_proses,
+        'donut': donut,
         'tahap_count': tahap_count,
+        'kandidat_baru': kandidat_baru,
     })
 
 @login_required(login_url='login')

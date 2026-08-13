@@ -2,9 +2,35 @@
 {% block title %}Dashboard{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 {% block content %}
-  <div class="page-header">
-    <h1>Dashboard</h1>
-    <p>Ringkasan rekrutmen periode aktif</p>
+  <div class="page-header"
+       style="display: flex;
+              align-items: flex-end;
+              justify-content: space-between;
+              gap: 16px">
+    <div>
+      <h1>Dashboard</h1>
+      <p>
+        Ringkasan rekrutmen
+        {% if periode_aktif %}periode {{ periode_aktif.nama }}{% endif %}
+      </p>
+    </div>
+    <form method="get">
+      <select name="periode"
+              onchange="this.form.submit()"
+              style="padding: 8px 12px;
+                     border: 1px solid var(--border, #d0e3e8);
+                     border-radius: 8px;
+                     font-size: 13px;
+                     color: var(--text-secondary);
+                     background: #fff">
+        {% for p in periode_list %}
+          <option value="{{ p.id }}"
+                  {% if periode_aktif and p.id == periode_aktif.id %}selected{% endif %}>{{ p.nama }}</option>
+        {% empty %}
+          <option value="">Belum ada periode</option>
+        {% endfor %}
+      </select>
+    </form>
   </div>
   <div class="stat-grid">
     <div class="stat-card">
@@ -51,12 +77,12 @@
             <div style="height: 100%;
                         background: #2d7d8e;
                         border-radius: 5px;
-                        width: 100%"></div>
+                        width: {{ tahap_count.administrasi.persen }}%"></div>
           </div>
           <span style="font-size: 12px;
                        color: var(--text-muted);
                        width: 30px;
-                       text-align: right">{{ total }}</span>
+                       text-align: right">{{ tahap_count.administrasi.jumlah }}</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px">
           <span style="font-size: 12px; color: var(--text-secondary); width: 130px">Tahap Psikotes</span>
@@ -68,29 +94,12 @@
             <div style="height: 100%;
                         background: #2d7d8e;
                         border-radius: 5px;
-                        width: 85%"></div>
+                        width: {{ tahap_count.psikotes.persen }}%"></div>
           </div>
           <span style="font-size: 12px;
                        color: var(--text-muted);
                        width: 30px;
-                       text-align: right">{{ tahap_count.psikotes }}</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px">
-          <span style="font-size: 12px; color: var(--text-secondary); width: 130px">Tahap Kompetensi</span>
-          <div style="flex: 1;
-                      height: 10px;
-                      background: #e0f5f9;
-                      border-radius: 5px;
-                      overflow: hidden">
-            <div style="height: 100%;
-                        background: #2d7d8e;
-                        border-radius: 5px;
-                        width: 70%"></div>
-          </div>
-          <span style="font-size: 12px;
-                       color: var(--text-muted);
-                       width: 30px;
-                       text-align: right">{{ tahap_count.kompetensi }}</span>
+                       text-align: right">{{ tahap_count.psikotes.jumlah }}</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px">
           <span style="font-size: 12px; color: var(--text-secondary); width: 130px">Tahap Wawancara</span>
@@ -102,12 +111,12 @@
             <div style="height: 100%;
                         background: #2d7d8e;
                         border-radius: 5px;
-                        width: 55%"></div>
+                        width: {{ tahap_count.wawancara.persen }}%"></div>
           </div>
           <span style="font-size: 12px;
                        color: var(--text-muted);
                        width: 30px;
-                       text-align: right">{{ tahap_count.wawancara }}</span>
+                       text-align: right">{{ tahap_count.wawancara.jumlah }}</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px">
           <span style="font-size: 12px; color: var(--text-secondary); width: 130px">Micro Teaching</span>
@@ -119,12 +128,12 @@
             <div style="height: 100%;
                         background: #2d7d8e;
                         border-radius: 5px;
-                        width: 40%"></div>
+                        width: {{ tahap_count.micro.persen }}%"></div>
           </div>
           <span style="font-size: 12px;
                        color: var(--text-muted);
                        width: 30px;
-                       text-align: right">{{ tahap_count.micro }}</span>
+                       text-align: right">{{ tahap_count.micro.jumlah }}</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px">
           <span style="font-size: 12px; color: var(--text-secondary); width: 130px">Hasil Akhir</span>
@@ -136,12 +145,12 @@
             <div style="height: 100%;
                         background: #1a7a3c;
                         border-radius: 5px;
-                        width: 30%"></div>
+                        width: {{ tahap_count.hasil.persen }}%"></div>
           </div>
           <span style="font-size: 12px;
                        color: var(--text-muted);
                        width: 30px;
-                       text-align: right">{{ layak }}</span>
+                       text-align: right">{{ tahap_count.hasil.jumlah }}</span>
         </div>
       </div>
     </div>
@@ -150,41 +159,61 @@
                 flex-direction: column;
                 align-items: center;
                 justify-content: center">
-      <div class="card-title" style="align-self: flex-start">Hasil Akhir</div>
-      <div class="card-sub" style="align-self: flex-start">Distribusi keputusan kandidat</div>
-      <svg width="160" height="160" viewBox="0 0 160 160">
-        <circle cx="80" cy="80" r="60" fill="none" stroke="#e0f5f9" stroke-width="24" />
-        <circle cx="80" cy="80" r="60" fill="none" stroke="#2d7d8e" stroke-width="24" stroke-dasharray="226 377" stroke-dashoffset="94" transform="rotate(-90 80 80)" />
-        <circle cx="80" cy="80" r="60" fill="none" stroke="#b42318" stroke-width="24" stroke-dasharray="151 377" stroke-dashoffset="-132" transform="rotate(-90 80 80)" />
-      </svg>
-      <div style="display: flex; gap: 16px; margin-top: 8px">
-        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px">
-          <div style="width: 10px;
-                      height: 10px;
-                      border-radius: 50%;
-                      background: #2d7d8e"></div>
-          <span style="color: var(--text-secondary)">Diterima</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px">
-          <div style="width: 10px;
-                      height: 10px;
-                      border-radius: 50%;
-                      background: #b42318"></div>
-          <span style="color: var(--text-secondary)">Ditolak</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px">
-          <div style="width: 10px;
-                      height: 10px;
-                      border-radius: 50%;
-                      background: #e0f5f9"></div>
-          <span style="color: var(--text-secondary)">Proses</span>
-        </div>
+      <div class="card-title" style="align-self: flex-start">Persentase Kelayakan</div>
+      <div class="card-sub" style="align-self: flex-start">
+        Distribusi kandidat layak dan tidak layak
+        {% if periode_aktif %}— {{ periode_aktif.nama }}{% endif %}
       </div>
+      {% if total > 0 %}
+        <div style="position: relative; width: 160px; height: 160px">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="60" fill="none" stroke="#e0f5f9" stroke-width="24" />
+            <circle cx="80" cy="80" r="60" fill="none" stroke="#2d7d8e" stroke-width="24" stroke-dasharray="{{ donut.layak_dash }}" stroke-dashoffset="{{ donut.layak_offset }}" transform="rotate(-90 80 80)" />
+            <circle cx="80" cy="80" r="60" fill="none" stroke="#b42318" stroke-width="24" stroke-dasharray="{{ donut.tidak_dash }}" stroke-dashoffset="{{ donut.tidak_offset }}" transform="rotate(-90 80 80)" />
+          </svg>
+          <div style="position: absolute;
+                      inset: 0;
+                      display: flex;
+                      flex-direction: column;
+                      align-items: center;
+                      justify-content: center">
+            <span style="font-size: 22px;
+                         font-weight: 600;
+                         color: var(--text-primary, #1a3c42)">{{ pct_layak }}%</span>
+            <span style="font-size: 11px; color: var(--text-muted)">Layak</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 16px; margin-top: 8px">
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 12px">
+            <div style="width: 10px;
+                        height: 10px;
+                        border-radius: 50%;
+                        background: #2d7d8e"></div>
+            <span style="color: var(--text-secondary)">Layak ({{ pct_layak }}%)</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 12px">
+            <div style="width: 10px;
+                        height: 10px;
+                        border-radius: 50%;
+                        background: #b42318"></div>
+            <span style="color: var(--text-secondary)">Tidak Layak ({{ pct_tidak_layak }}%)</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 12px">
+            <div style="width: 10px;
+                        height: 10px;
+                        border-radius: 50%;
+                        background: #e0f5f9"></div>
+            <span style="color: var(--text-secondary)">Proses ({{ pct_proses }}%)</span>
+          </div>
+        </div>
+      {% else %}
+        <p style="font-size: 13px; color: var(--text-muted); padding: 30px 0">Belum ada data kandidat pada periode ini</p>
+      {% endif %}
     </div>
   </div>
   <div class="table-wrap">
     <div class="table-header">
-      <h3>Aktivitas Kandidat Terbaru</h3>
+      <h3>Kandidat Baru Masuk</h3>
       <a href="{% url 'manajemen_kandidat' %}"
          style="font-size: 12px;
                 color: var(--teal)">Lihat semua</a>
@@ -199,7 +228,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for k in kandidat_terbaru %}
+        {% for k in kandidat_baru %}
           <tr>
             <td>
               <div style="font-weight: 500">{{ k.nama }}</div>
@@ -232,7 +261,7 @@
             <td colspan="4"
                 style="text-align: center;
                        color: var(--text-muted);
-                       padding: 20px">Belum ada kandidat</td>
+                       padding: 20px">Belum ada kandidat baru pada periode ini</td>
           </tr>
         {% endfor %}
       </tbody>

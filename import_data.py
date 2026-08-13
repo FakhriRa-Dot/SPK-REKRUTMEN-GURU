@@ -17,7 +17,7 @@ from rekrutmen_guru.models import (
 )
 
 # ── Ganti nama file Excel kamu di sini ────────────────────────────────────────
-FILE_EXCEL = 'Data_Rekrutmen_Training.xlsx'
+FILE_EXCEL = 'Data_Rekrutmen_Training_Fixed.xlsx'
 NAMA_SHEET = 'Data Training'
 
 # ── Mapping nama kriteria di Excel → nama di database ─────────────────────────
