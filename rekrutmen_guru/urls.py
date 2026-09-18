@@ -34,6 +34,9 @@ urlpatterns = [
     path('kandidat/<int:kandidat_id>/hapus/', views.hapus_kandidat, name='hapus_kandidat'),
     path('manajemen/kriteria/', views.manajemen_kriteria, name='manajemen_kriteria'),
 
+    path('manajemen/kandidat/export/excel/', views.export_kandidat_excel, name='export_kandidat_excel'),
+    path('manajemen/kandidat/export/pdf/', views.export_kandidat_pdf, name='export_kandidat_pdf'),
+
     path('fucom/', views.fucom_upload, name='fucom_upload'),
     path('fucom/download-template/', views.download_template_fucom, name='download_template_fucom'),
 

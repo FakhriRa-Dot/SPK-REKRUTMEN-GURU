@@ -2,10 +2,13 @@ import numpy as np
 import xgboost as xgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
+from scipy.stats import spearmanr
+from collections import defaultdict
 import os
 import pickle
 
 from ..models import Kandidat, NilaiKriteria, Kriteria, HasilSeleksi
+from .kode_kriteria import get_kode_kriteria 
 
 KRITERIA_LIST = [
     'Kualifikasi Akademik',
@@ -69,7 +72,6 @@ def ambil_data_training():
         y.append(1 if kandidat.label == 'diterima' else 0)
 
     return np.array(X, dtype=float), np.array(y, dtype=int)
-
 
 def training_model():
     """
@@ -179,44 +181,164 @@ def prediksi_kandidat(kandidat):
     return {
         'prediksi': 'Layak' if pred == 1 else 'Tidak Layak',
         'probabilitas': round(float(proba[pred]) * 100, 2),
+        # Probabilitas kelas "Layak" secara khusus (bukan probabilitas kelas
+        # yang diprediksi) — dipakai sebagai dasar ranking XGBoost, terlepas
+        # dari label prediksi biner-nya.
+        'probabilitas_layak': round(float(proba[1]) * 100, 2),
     }
 
 
 def prediksi_semua():
     """
     Prediksi kelayakan semua kandidat yang sudah selesai semua tahap.
-    Update hasil ke tabel HasilSeleksi.
+    Update hasil ke tabel HasilSeleksi, termasuk ranking_xgboost yang
+    dihitung per periode berdasarkan probabilitas kelas Layak (descending),
+    setara dengan cara ranking MARCOS dihitung per periode berdasarkan Ki.
     """
-    kandidat_qs = Kandidat.objects.filter(
+    kandidat_qs = Kandidat.objects.select_related('periode').filter(
         status_tahap_1='hadir',
         status_tahap_2='hadir',
         status_tahap_3='hadir',
         status_tahap_4='hadir',
     )
 
-    hasil_list = []
+    # Kumpulkan dulu semua hasil prediksi per kandidat, dikelompokkan
+    # per periode (PeriodeRekrutmen), supaya ranking bisa dihitung per
+    # kelompok. Key grouping pakai periode_id (aman untuk kandidat tanpa
+    # periode / periode null, dikelompokkan jadi satu grup id=None).
+    prediksi_per_periode = defaultdict(list)
+
     for kandidat in kandidat_qs:
+        # Data historis tidak diikutkan dalam ranking XGBoost, sama seperti
+        # perlakuannya di halaman Hasil Akhir dan Prediksi.
+        if kandidat.periode and kandidat.periode.nama == 'Data Historis':
+            continue
+
         try:
             hasil_prediksi = prediksi_kandidat(kandidat)
-
-            # Simpan ke HasilSeleksi
-            obj, _ = HasilSeleksi.objects.get_or_create(kandidat=kandidat)
-            obj.prediksi = hasil_prediksi['prediksi']
-            obj.probabilitas = hasil_prediksi['probabilitas']
-            obj.save()
-
-            hasil_list.append({
-                'nama': kandidat.nama,
-                'prediksi': hasil_prediksi['prediksi'],
-                'probabilitas': hasil_prediksi['probabilitas'],
-                'nilai_utilitas': obj.nilai_utilitas,
-                'ranking': obj.ranking,
+            prediksi_per_periode[kandidat.periode_id].append({
+                'kandidat': kandidat,
+                'hasil_prediksi': hasil_prediksi,
             })
         except Exception as e:
             print(f"Skip {kandidat.nama}: {e}")
             continue
 
+    hasil_list = []
+
+    for periode_id, daftar in prediksi_per_periode.items():
+        # Urutkan descending berdasarkan probabilitas kelas Layak
+        daftar_terurut = sorted(
+            daftar,
+            key=lambda d: d['hasil_prediksi']['probabilitas_layak'],
+            reverse=True,
+        )
+
+        for rank, item in enumerate(daftar_terurut, start=1):
+            kandidat = item['kandidat']
+            hasil_prediksi = item['hasil_prediksi']
+
+            # Simpan ke HasilSeleksi
+            obj, _ = HasilSeleksi.objects.get_or_create(kandidat=kandidat)
+            obj.prediksi = hasil_prediksi['prediksi']
+            obj.probabilitas = hasil_prediksi['probabilitas']
+            obj.probabilitas_layak = hasil_prediksi['probabilitas_layak']
+            obj.ranking_xgboost = rank
+            obj.save()
+
+            hasil_list.append({
+                'nama': kandidat.nama,
+                'periode': kandidat.periode.nama if kandidat.periode else None,
+                'prediksi': hasil_prediksi['prediksi'],
+                'probabilitas': hasil_prediksi['probabilitas'],
+                'probabilitas_layak': hasil_prediksi['probabilitas_layak'],
+                'nilai_utilitas': obj.nilai_utilitas,
+                'ranking': obj.ranking,
+                'ranking_xgboost': rank,
+            })
+
     return hasil_list
+
+
+def hitung_konsistensi_ranking(periode=None):
+    """
+    Hitung konsistensi antara ranking MARCOS (berdasarkan nilai_utilitas/Ki)
+    dan ranking XGBoost (berdasarkan probabilitas kelas Layak) menggunakan
+    Spearman's Rank Correlation Coefficient.
+
+    `periode` boleh diisi instance PeriodeRekrutmen atau id-nya, untuk
+    membatasi hanya satu periode. Kalau None, menghitung per periode
+    secara terpisah lalu mengembalikan hasil untuk masing-masing periode
+    (ranking TIDAK pernah digabung lintas periode, sama seperti perlakuan
+    ranking MARCOS).
+
+    Return: list of dict, masing-masing berisi nama periode, koefisien rho,
+    p-value, jumlah kandidat yang dibandingkan, dan tabel detail per
+    kandidat (untuk ditampilkan sebagai tabel di Bab IV).
+    """
+    qs = HasilSeleksi.objects.select_related('kandidat', 'kandidat__periode').filter(
+        ranking__isnull=False,
+        ranking_xgboost__isnull=False,
+    )
+
+    if periode is not None:
+        qs = qs.filter(kandidat__periode=periode)
+    else:
+        qs = qs.exclude(kandidat__periode__nama='Data Historis')
+
+    per_periode = defaultdict(list)
+    for hasil in qs:
+        per_periode[hasil.kandidat.periode_id].append(hasil)
+
+    output = []
+    for periode_id, daftar in per_periode.items():
+        if len(daftar) < 2:
+            # Spearman butuh minimal 2 pasangan data untuk bermakna
+            continue
+
+        nama_periode = daftar[0].kandidat.periode.nama if daftar[0].kandidat.periode else None
+
+        # Ranking MARCOS yang tersimpan di field `ranking` dihitung secara
+        # GLOBAL lintas seluruh data kandidat (bukan per periode), sedangkan
+        # `ranking_xgboost` dihitung per periode. Untuk keperluan tabel
+        # perbandingan & korelasi di sini, dihitung ulang ranking MARCOS
+        # versi LOKAL (dense rank 1..n) khusus untuk kandidat dalam periode
+        # yang sama, supaya kedua kolom benar-benar apple-to-apple (1..n).
+        # Nilai `ranking` global tetap disimpan terpisah sebagai referensi,
+        # tidak diubah di database.
+        urutan_lokal = sorted(daftar, key=lambda h: h.nilai_utilitas, reverse=True)
+        ranking_marcos_lokal = {h.pk: rank for rank, h in enumerate(urutan_lokal, start=1)}
+
+        rank_marcos = [ranking_marcos_lokal[h.pk] for h in daftar]
+        rank_xgb = [h.ranking_xgboost for h in daftar]
+
+        rho, p_value = spearmanr(rank_marcos, rank_xgb)
+
+        detail = sorted(
+            [
+                {
+                    'nama': h.kandidat.nama,
+                    'nilai_utilitas': h.nilai_utilitas,
+                    'ranking_marcos_global': h.ranking,
+                    'ranking_marcos': ranking_marcos_lokal[h.pk],
+                    'probabilitas_layak': h.probabilitas_layak,
+                    'ranking_xgboost': h.ranking_xgboost,
+                    'selisih_ranking': abs(ranking_marcos_lokal[h.pk] - h.ranking_xgboost),
+                }
+                for h in daftar
+            ],
+            key=lambda d: d['ranking_marcos'],
+        )
+
+        output.append({
+            'periode': nama_periode,
+            'rho': round(float(rho), 4),
+            'p_value': round(float(p_value), 4),
+            'jumlah_kandidat': len(daftar),
+            'detail': detail,
+        })
+
+    return output
 
 def detail_prediksi_kandidat(kandidat):
     """
@@ -255,14 +377,16 @@ def detail_prediksi_kandidat(kandidat):
     prob_tidak = round(float(proba[0]) * 100, 1)
 
     # Kontribusi tiap kriteria = nilai × bobot
+    kode_map = get_kode_kriteria()
+
     kontribusi = []
-    for i, nama in enumerate(KRITERIA_LIST):
+    for nama in KRITERIA_LIST:
         k_obj = kriteria_db.get(nama)
         bobot = k_obj.bobot if k_obj else 0
         nilai = nilai_dict.get(nama, 0)
         kontrib = round(float(nilai) * float(bobot), 2)
         kontribusi.append({
-            'kode': f'C{i+1}',
+            'kode': kode_map.get(nama, '?'),   # ← sekarang ikut urutan bobot
             'nama': nama,
             'nilai': nilai,
             'bobot': bobot,

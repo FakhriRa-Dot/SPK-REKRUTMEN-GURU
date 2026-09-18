@@ -33,6 +33,50 @@
                     {% if periode_aktif == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nama }}</option>
           {% endfor %}
         </select>
+        <div style="position:relative;">
+          <button type="button"
+                  onclick="toggleExportMenu()"
+                  class="btn btn-secondary"
+                  style="font-size:12px">
+            <i class="ti ti-download"></i> Export
+          </button>
+          <div id="export-menu"
+               style="display:none;
+                      position:absolute;
+                      right:0;
+                      top:38px;
+                      background:#fff;
+                      border:1px solid var(--border);
+                      border-radius:8px;
+                      box-shadow:0 4px 12px rgba(0,0,0,0.1);
+                      min-width:140px;
+                      z-index:10;
+                      overflow:hidden">
+            <a id="export-excel-link"
+               href="#"
+               style="display:flex;
+                      align-items:center;
+                      gap:8px;
+                      padding:10px 14px;
+                      font-size:12px;
+                      color:var(--text);
+                      text-decoration:none">
+              <i class="ti ti-file-spreadsheet" style="color:#2e7d32;"></i> Excel
+            </a>
+            <a id="export-pdf-link"
+               href="#"
+               style="display:flex;
+                      align-items:center;
+                      gap:8px;
+                      padding:10px 14px;
+                      font-size:12px;
+                      color:var(--text);
+                      text-decoration:none;
+                      border-top:1px solid var(--border)">
+              <i class="ti ti-file-type-pdf" style="color:#c62828;"></i> PDF
+            </a>
+          </div>
+        </div>
         <a href="{% url 'input_kandidat' %}"
            class="btn btn-primary"
            style="font-size:12px">
@@ -216,5 +260,22 @@ function konfirmasiHapus(id, nama) {
 function tutupModal() {
   document.getElementById('modal-hapus').style.display = 'none';
 }
+function toggleExportMenu() {
+  const menu = document.getElementById('export-menu');
+  const status = document.getElementById('filter-status').value;
+  const periode = document.getElementById('filter-periode').value;
+  document.getElementById('export-excel-link').href =
+    "{% url 'export_kandidat_excel' %}?status=" + status + "&periode=" + periode;
+  document.getElementById('export-pdf-link').href =
+    "{% url 'export_kandidat_pdf' %}?status=" + status + "&periode=" + periode;
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('export-menu');
+  const btn = e.target.closest('button[onclick="toggleExportMenu()"]');
+  if (!btn && menu && !menu.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
   </script>
 {% endblock extra_js %}

@@ -137,6 +137,8 @@ class HasilSeleksi(models.Model):
     ranking = models.IntegerField(null=True, blank=True)
     prediksi = models.CharField(max_length=20, null=True, blank=True)
     probabilitas = models.FloatField(null=True, blank=True)
+    probabilitas_layak = models.FloatField(null=True, blank=True)  # BARU
+    ranking_xgboost = models.IntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

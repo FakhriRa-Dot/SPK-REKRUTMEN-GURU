@@ -1,0 +1,47 @@
+<div style="display:flex;
+            align-items:center;
+            justify-content:center;
+            margin-bottom:24px;
+            padding:20px 0">
+  {% for s in steppers %}
+    <div style="display:flex;
+                flex-direction:column;
+                align-items:center;
+                position:relative;
+                flex:1;
+                max-width:160px">
+      <div style="width:36px;
+                  height:36px;
+                  border-radius:50%;
+                  display:flex;
+                  align-items:center;
+                  justify-content:center;
+                  background:{% if s.status == 'done' %}#1a7a3c{% elif s.status == 'active' %}#2d7d8e{% else %}#e0e5ea{% endif %};
+                  color:{% if s.status == 'done' or s.status == 'active' %}#fff{% else %}#9aa5b4{% endif %};
+                  font-size:14px;
+                  font-weight:600;
+                  z-index:2">
+        {% if s.status == 'done' %}
+          <i class="ti ti-check" style="font-size:16px;"></i>
+        {% else %}
+          {{ s.nomor }}
+        {% endif %}
+      </div>
+      <div style="text-align:center;margin-top:8px;">
+        <div style="font-size:11px;color:var(--text-muted);">Tahap {{ s.nomor }}</div>
+        <div style="font-size:13px;
+                    font-weight:{% if s.status == 'active' %}600{% else %}500{% endif %};
+                    color:{% if s.status == 'active' %}var(--teal){% else %}var(--text-primary){% endif %}">
+          {{ s.nama }}
+        </div>
+      </div>
+    </div>
+    {% if not forloop.last %}
+      <div style="height:2px;
+                  flex:1;
+                  max-width:60px;
+                  margin-top:-30px;
+                  background:{% if s.status == 'done' %}#1a7a3c{% else %}#e0e5ea{% endif %}"></div>
+    {% endif %}
+  {% endfor %}
+</div>

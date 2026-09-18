@@ -26,7 +26,7 @@ def baca_sheet_responden(sheet):
     Mengembalikan (urutan_kriteria, rasio_perbandingan).
     """
     data = []
-    for row in sheet.iter_rows(min_row=5, max_row=12, min_col=2, max_col=4, values_only=True):
+    for row in sheet.iter_rows(min_row=3, max_row=10, min_col=2, max_col=4, values_only=True):
         nama, peringkat, rasio = row
         if nama and peringkat:
             data.append({
@@ -204,7 +204,6 @@ def download_template_fucom(request):
     return response
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
-
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
@@ -377,6 +376,22 @@ def input_kandidat(request):
     })
 
 # ── Tahap Seleksi ─────────────────────────────────────────────────────────────
+def get_stepper_data(tahap_aktif):
+    """
+    tahap_aktif: 1-5, menunjukkan tahap yang sedang aktif/dilihat
+    """
+    nama_tahap = ['Administrasi', 'Psikotes', 'Kompetensi', 'Wawancara', 'Micro Teaching']
+    steppers = []
+    for i, nama in enumerate(nama_tahap, start=1):
+        if i < tahap_aktif:
+            status = 'done'
+        elif i == tahap_aktif:
+            status = 'active'
+        else:
+            status = 'upcoming'
+        steppers.append({'nomor': i, 'nama': nama, 'status': status})
+    return steppers
+
 @login_required(login_url='login')
 def administrasi(request):
     from .models import Kandidat
@@ -388,7 +403,10 @@ def administrasi(request):
     paginator = Paginator(kandidat_qs, 15)
     page_number = request.GET.get('page')
     kandidat_list = paginator.get_page(page_number)
-    return render(request, 'sistem/administrasi.html', {'kandidat_list': kandidat_list})
+    return render(request, 'sistem/administrasi.html', {
+        'kandidat_list': kandidat_list,
+        'steppers': get_stepper_data(1),
+        })
 
 @login_required(login_url='login')
 def psikotes(request):
@@ -400,7 +418,10 @@ def psikotes(request):
     paginator = Paginator(kandidat_qs, 15)
     page_number = request.GET.get('page')
     kandidat_list = paginator.get_page(page_number)
-    return render(request, 'sistem/psikotes.html', {'kandidat_list': kandidat_list})
+    return render(request, 'sistem/psikotes.html', {
+        'kandidat_list': kandidat_list,
+        'steppers': get_stepper_data(2),
+        })
 
 @login_required(login_url='login')
 def kompetensi(request):
@@ -413,7 +434,10 @@ def kompetensi(request):
     paginator = Paginator(kandidat_qs, 15)
     page_number = request.GET.get('page')
     kandidat_list = paginator.get_page(page_number)
-    return render(request, 'sistem/kompetensi.html', {'kandidat_list': kandidat_list})
+    return render(request, 'sistem/kompetensi.html', {
+        'kandidat_list': kandidat_list,
+        'steppers': get_stepper_data(3),
+        })
 
 @login_required(login_url='login')
 def wawancara(request):
@@ -425,7 +449,10 @@ def wawancara(request):
     paginator = Paginator(kandidat_qs, 15)
     page_number = request.GET.get('page')
     kandidat_list = paginator.get_page(page_number)
-    return render(request, 'sistem/wawancara.html', {'kandidat_list': kandidat_list})
+    return render(request, 'sistem/wawancara.html', {
+        'kandidat_list': kandidat_list,
+        'steppers': get_stepper_data(4),
+    })
 
 @login_required(login_url='login')
 def micro_teaching(request):
@@ -437,7 +464,10 @@ def micro_teaching(request):
     paginator = Paginator(kandidat_qs, 15)
     page_number = request.GET.get('page')
     kandidat_list = paginator.get_page(page_number)
-    return render(request, 'sistem/micro_teaching.html', {'kandidat_list': kandidat_list})
+    return render(request, 'sistem/micro_teaching.html', {
+        'kandidat_list': kandidat_list,
+        'steppers': get_stepper_data(5),
+    })
 
 @login_required(login_url='login')
 def update_status(request, kandidat_id):
@@ -667,6 +697,7 @@ def input_nilai_tahap(request, kandidat_id, tahap):
         'kandidat': kandidat,
         'tahap': tahap,
         'nilai': nilai_template,
+        'steppers': get_stepper_data(tahap),
     })
 
 # ── Evaluasi & Hasil ──────────────────────────────────────────────────────────
@@ -803,8 +834,20 @@ def hasil(request):
         kandidat__periode__nama='Data Historis'
     ).select_related('kandidat', 'kandidat__bidang_studi', 'kandidat__periode')
 
+    total_diterima = HasilSeleksi.objects.filter(
+        kandidat__status_tahap_4='hadir',
+        kandidat__keputusan_akhir='diterima'
+    ).exclude(kandidat__periode__nama='Data Historis')
+
+    total_ditolak = HasilSeleksi.objects.filter(
+        kandidat__status_tahap_4='hadir',
+        kandidat__keputusan_akhir='tidak_diterima'
+    ).exclude(kandidat__periode__nama='Data Historis')
+
     if periode_aktif:
         semua = semua.filter(kandidat__periode_id=periode_aktif)
+        total_diterima = total_diterima.filter(kandidat__periode_id=periode_aktif)
+        total_ditolak = total_ditolak.filter(kandidat__periode_id=periode_aktif)
 
     # Re-ranking berdasarkan nilai utilitas
     semua = semua.order_by('-nilai_utilitas')
@@ -823,6 +866,8 @@ def hasil(request):
         'total': semua.count(),
         'total_layak': layak.count(),
         'total_tidak': tidak.count(),
+        'total_diterima': total_diterima.count(),
+        'total_ditolak': total_ditolak.count(),
         'periode_list': periode_list,
         'periode_aktif': periode_aktif,
     })
@@ -909,7 +954,6 @@ def detail_hasil(request, kandidat_id):
     })
 
 # ── Manajemen ─────────────────────────────────────────────────────────────────
-
 @login_required(login_url='login')
 def manajemen_kandidat(request):
     from .models import Kandidat, PeriodeRekrutmen
@@ -971,3 +1015,274 @@ def manajemen_kriteria(request):
     return render(request, 'sistem/manajemen_kriteria.html', {
         'kriteria_list': kriteria_list,
     })
+
+# ── Export ────────────────────────────────────────────────────────────────────
+def _filter_kandidat_export(request):
+    """
+    Filter kandidat yang sama persis dengan manajemen_kandidat,
+    supaya hasil export selalu sinkron dengan apa yang ditampilkan di layar.
+    """
+    periode_id = request.GET.get('periode', '')
+    status_aktif = request.GET.get('status', '')
+
+    kandidat_qs = Kandidat.objects.all().order_by('-created_at')
+
+    if periode_id:
+        kandidat_qs = kandidat_qs.filter(periode_id=periode_id)
+
+    if status_aktif == 'gugur':
+        kandidat_qs = kandidat_qs.filter(
+            status_tahap_2='gugur'
+        ) | kandidat_qs.filter(
+            status_tahap_3='gugur'
+        ) | kandidat_qs.filter(
+            status_tahap_4='gugur'
+        )
+    elif status_aktif == 'selesai':
+        kandidat_qs = kandidat_qs.filter(status_tahap_4='hadir')
+    elif status_aktif == 'aktif':
+        kandidat_qs = kandidat_qs.exclude(
+            status_tahap_4='hadir'
+        ).exclude(
+            status_tahap_2='gugur'
+        ).exclude(
+            status_tahap_3='gugur'
+        ).exclude(
+            status_tahap_4='gugur'
+        )
+
+    periode_nama = None
+    if periode_id:
+        periode_obj = PeriodeRekrutmen.objects.filter(id=periode_id).first()
+        periode_nama = periode_obj.nama if periode_obj else None
+
+    return kandidat_qs.select_related('bidang_studi', 'periode'), periode_nama
+
+GRUP_TAHAP = [
+    ('Tahap Administrasi', ['Kualifikasi Akademik']),
+    ('Tahap Psikotes', ['IQ', 'Tes Psikotes']),
+    ('Tahap Kompetensi', ['Nilai Akademik', 'Pengalaman Mengajar']),
+    ('Tahap Wawancara', ['Komitmen (Wawancara)', 'Ruhiyah (Keagamaan)']),
+    ('Tahap Micro Teaching', ['Micro Teaching']),
+]
+
+def _nilai_kandidat_dict(kandidat):
+    """Ambil semua nilai kriteria kandidat sebagai dict {nama_kriteria: nilai}."""
+    return {nk.kriteria.nama: nk.nilai for nk in kandidat.nilai.all()}
+
+@login_required(login_url='login')
+def export_kandidat_excel(request):
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from django.http import HttpResponse
+    from openpyxl.utils import get_column_letter
+
+    kandidat_qs, periode_nama = _filter_kandidat_export(request)
+    kandidat_qs = kandidat_qs.prefetch_related('nilai__kriteria')
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Data Kandidat'
+
+    header_fill = PatternFill("solid", start_color="2d7d8e")
+    border = Border(
+        left=Side(style='thin'), right=Side(style='thin'),
+        top=Side(style='thin'), bottom=Side(style='thin')
+    )
+
+    kolom_dasar = ['No', 'Nama', 'Jenjang', 'Bidang Studi', 'Periode']
+    kolom_akhir = ['Keputusan Akhir']
+
+    total_kolom = len(kolom_dasar) + sum(len(k) for _, k in GRUP_TAHAP) + len(kolom_akhir)
+
+    # Judul
+    ws.merge_cells(start_row=1, end_row=1, start_column=1, end_column=total_kolom)
+    judul = f'DATA KANDIDAT — {periode_nama}' if periode_nama else 'DATA KANDIDAT — SELURUH PERIODE'
+    ws.cell(row=1, column=1, value=judul)
+    ws['A1'].font = Font(bold=True, color='FFFFFF', size=12)
+    ws['A1'].fill = header_fill
+    ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[1].height = 26
+
+    # Header baris 2 (grup tahap) & baris 3 (nama kriteria)
+    col = 1
+    for h in kolom_dasar:
+        ws.merge_cells(start_row=2, end_row=3, start_column=col, end_column=col)
+        cell = ws.cell(row=2, column=col, value=h)
+        cell.font = Font(bold=True, color='FFFFFF', size=10)
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        cell.border = border
+        ws.cell(row=3, column=col).fill = header_fill
+        ws.cell(row=3, column=col).border = border
+        col += 1
+
+    for nama_grup, kriteria_list in GRUP_TAHAP:
+        start_col = col
+        for k in kriteria_list:
+            cell = ws.cell(row=3, column=col, value=k)
+            cell.font = Font(bold=True, color='FFFFFF', size=9)
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+            cell.border = border
+            col += 1
+        end_col = col - 1
+        if end_col > start_col:
+            ws.merge_cells(start_row=2, end_row=2, start_column=start_col, end_column=end_col)
+        grup_cell = ws.cell(row=2, column=start_col, value=nama_grup)
+        grup_cell.font = Font(bold=True, color='FFFFFF', size=10)
+        grup_cell.fill = header_fill
+        grup_cell.alignment = Alignment(horizontal='center', vertical='center')
+        grup_cell.border = border
+
+    for h in kolom_akhir:
+        ws.merge_cells(start_row=2, end_row=3, start_column=col, end_column=col)
+        cell = ws.cell(row=2, column=col, value=h)
+        cell.font = Font(bold=True, color='FFFFFF', size=10)
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        cell.border = border
+        ws.cell(row=3, column=col).fill = header_fill
+        ws.cell(row=3, column=col).border = border
+        col += 1
+
+    ws.row_dimensions[2].height = 22
+    ws.row_dimensions[3].height = 30
+
+    keputusan_label = {'diterima': 'Diterima', 'tidak_diterima': 'Tidak Diterima'}
+
+    for i, k in enumerate(kandidat_qs, start=1):
+        row = i + 3
+        nilai_dict = _nilai_kandidat_dict(k)
+        fill = PatternFill("solid", start_color="DEEAF1") if i % 2 == 0 else PatternFill("solid", start_color="FFFFFF")
+
+        col = 1
+        data_dasar = [i, k.nama, k.jenjang_pendidikan or '-', k.bidang_studi.nama if k.bidang_studi else '-', k.periode.nama if k.periode else '-']
+        for val in data_dasar:
+            cell = ws.cell(row=row, column=col, value=val)
+            cell.font = Font(size=10)
+            cell.fill = fill
+            cell.border = border
+            cell.alignment = Alignment(horizontal='center' if col != 2 else 'left', vertical='center')
+            col += 1
+
+        for _, kriteria_list in GRUP_TAHAP:
+            for kr in kriteria_list:
+                nilai = nilai_dict.get(kr)
+                cell = ws.cell(row=row, column=col, value=nilai if nilai is not None else '-')
+                cell.font = Font(size=10)
+                cell.fill = fill
+                cell.border = border
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+                col += 1
+
+        cell = ws.cell(row=row, column=col, value=keputusan_label.get(k.keputusan_akhir, '-'))
+        cell.font = Font(size=10)
+        cell.fill = fill
+        cell.border = border
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    ws.column_dimensions['A'].width = 5
+    ws.column_dimensions['B'].width = 25
+    for idx in range(3, total_kolom + 1):
+        ws.column_dimensions[get_column_letter(idx)].width = 14
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    filename = f'Data_Kandidat_{periode_nama}.xlsx' if periode_nama else 'Data_Kandidat_Semua_Periode.xlsx'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    return response
+
+@login_required(login_url='login')
+def export_kandidat_pdf(request):
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib import colors
+    from reportlab.lib.units import cm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.enums import TA_CENTER
+
+    kandidat_qs, periode_nama = _filter_kandidat_export(request)
+    kandidat_qs = kandidat_qs.prefetch_related('nilai__kriteria')
+
+    response = HttpResponse(content_type='application/pdf')
+    filename = f'Data_Kandidat_{periode_nama}.pdf' if periode_nama else 'Data_Kandidat_Semua_Periode.pdf'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    doc = SimpleDocTemplate(
+        response, pagesize=landscape(A4),
+        leftMargin=1*cm, rightMargin=1*cm, topMargin=1.5*cm, bottomMargin=1.5*cm
+    )
+    styles = getSampleStyleSheet()
+    judul_style = styles['Title']
+    judul_style.alignment = TA_CENTER
+    judul_style.fontSize = 14
+
+    judul = f'Data Kandidat — {periode_nama}' if periode_nama else 'Data Kandidat — Seluruh Periode'
+    elemen = [Paragraph(judul, judul_style), Spacer(1, 0.4*cm)]
+
+    keputusan_label = {'diterima': 'Diterima', 'tidak_diterima': 'Tidak Diterima'}
+
+    kolom_dasar = ['No', 'Nama', 'Jenjang', 'Periode']
+    kolom_akhir = ['Keputusan']
+
+    header_grup = kolom_dasar[:]      # label tampil di baris atas untuk kolom yang di-span
+    header_sub = ['', '', '', '']     # baris bawah dikosongkan untuk kolom yang sama
+    span_commands = []
+
+    col = len(kolom_dasar)
+    for nama_grup, kriteria_list in GRUP_TAHAP:
+        start_col = col
+        for kr in kriteria_list:
+            header_grup.append('')
+            header_sub.append(kr)
+            col += 1
+        end_col = col - 1
+        header_grup[start_col] = nama_grup
+        if end_col > start_col:
+            span_commands.append(('SPAN', (start_col, 0), (end_col, 0)))
+
+    header_grup += kolom_akhir
+    header_sub += ['']
+    col += 1
+
+    for idx in range(len(kolom_dasar)):
+        span_commands.append(('SPAN', (idx, 0), (idx, 1)))
+    span_commands.append(('SPAN', (col - 1, 0), (col - 1, 1)))
+
+    data_table = [header_grup, header_sub]
+
+    for i, k in enumerate(kandidat_qs, start=1):
+        nilai_dict = _nilai_kandidat_dict(k)
+        row = [str(i), k.nama, k.jenjang_pendidikan or '-', k.periode.nama if k.periode else '-']
+        for _, kriteria_list in GRUP_TAHAP:
+            for kr in kriteria_list:
+                nilai = nilai_dict.get(kr)
+                row.append(str(nilai) if nilai is not None else '-')
+        row.append(keputusan_label.get(k.keputusan_akhir, '-'))
+        data_table.append(row)
+
+    # Lebar kolom eksplisit (cm), total harus muat di lebar A4 landscape - margin (~27.7 cm)
+    lebar_cm = [1.0, 3.2, 1.3, 2.3]              # No, Nama, Jenjang, Periode
+    lebar_cm += [2.0] * (col - len(kolom_dasar) - 1)  # semua kolom kriteria
+    lebar_cm += [1.8]                             # Keputusan
+    col_widths = [w * cm for w in lebar_cm]
+
+    tabel = Table(data_table, repeatRows=2, colWidths=col_widths)
+    tabel.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 1), colors.HexColor('#2d7d8e')),
+        ('TEXTCOLOR', (0, 0), (-1, 1), colors.white),
+        ('FONTNAME', (0, 0), (-1, 1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 7),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('ROWBACKGROUNDS', (0, 2), (-1, -1), [colors.white, colors.HexColor('#DEEAF1')]),
+        *span_commands,
+    ]))
+    elemen.append(tabel)
+
+    doc.build(elemen)
+    return response

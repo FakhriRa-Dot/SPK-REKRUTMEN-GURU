@@ -22,8 +22,8 @@
                     {% if periode_aktif == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nama }}</option>
           {% endfor %}
         </select>
-        <span class="badge badge-green">{{ total_layak }} Diterima</span>
-        <span class="badge badge-red">{{ total_tidak }} Ditolak</span>
+        <span class="badge badge-green">{{ total_diterima }} Diterima</span>
+        <span class="badge badge-red">{{ total_ditolak }} Ditolak</span>
       </div>
     </div>
     <div style="max-height:600px;overflow-y:auto;">
@@ -37,6 +37,7 @@
             <th>Nilai Ki</th>
             <th>Prediksi</th>
             <th>Probabilitas</th>
+            <th>Keputusan</th>
           </tr>
         </thead>
         <tbody>
@@ -62,12 +63,12 @@
               </td>
               <td>{{ h.obj.probabilitas|default:"-" }}{% if h.obj.probabilitas %}%{% endif %}</td>
               <td>
-                {% if h.obj.prediksi == 'Layak' %}
-                  <span class="badge badge-green"><i class="ti ti-check"></i> Diterima</span>
-                {% elif h.obj.prediksi == 'Tidak Layak' %}
-                  <span class="badge badge-red"><i class="ti ti-x"></i> Ditolak</span>
+                {% if h.obj.kandidat.keputusan_akhir == 'diterima' %}
+                  <span class="badge badge-green"><i class="ti ti-check"></i>Diterima</span>
+                {% elif h.obj.kandidat.keputusan_akhir == 'tidak_diterima' %}
+                  <span class="badge badge-red"><i class="ti ti-x"></i>Ditolak</span>
                 {% else %}
-                  <span class="badge badge-gray">Belum diproses</span>
+                  <span class="badge badge-gray">-</span>
                 {% endif %}
               </td>
             </tr>

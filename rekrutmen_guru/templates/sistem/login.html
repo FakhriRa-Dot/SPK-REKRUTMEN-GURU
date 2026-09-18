@@ -1,15 +1,13 @@
 {% load static %}
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login — SPK Rekrutmen Guru</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
-    />
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
     <style>
       body {
         margin: 0;
@@ -168,49 +166,45 @@
         <div class="circle circle-1"></div>
         <div class="circle circle-2"></div>
         <div class="circle circle-3"></div>
+        {% load static %}
         <div class="login-left-logo">
-          <div class="login-left-logo-icon"></div>
+          <img src="{% static 'img/logo.png' %}"
+               alt="Logo Yayasan Al Hasanah"
+               style="width:44px;
+                      height:44px;
+                      border-radius:10px;
+                      object-fit:cover;
+                      flex-shrink:0">
           <div>
             <div class="login-left-logo-text">Yayasan Al Hasanah</div>
-            <div class="login-left-logo-sub">
-              Sistem Pendukung Keputusan Rekrutmen Guru
-            </div>
+            <div class="login-left-logo-sub">Sistem Pendukung Keputusan Rekrutmen Guru</div>
           </div>
         </div>
       </div>
-
       <!-- Kanan -->
       <div class="login-right">
         <div class="login-form-wrap">
           <div class="login-title">SELAMAT DATANG</div>
-          <div class="login-sub">
-            MASUK SEBAGAI ADMINISTRATOR REKRUTMEN GURU
-          </div>
-
+          <div class="login-sub">MASUK SEBAGAI ADMINISTRATOR REKRUTMEN GURU</div>
           {% if error %}
-          <div class="login-error">
-            <i class="ti ti-alert-circle"></i> {{ error }}
-          </div>
+            <div class="login-error">
+              <i class="ti ti-alert-circle"></i> {{ error }}
+            </div>
           {% endif %}
-
           <form method="POST">
             {% csrf_token %}
             <label class="login-label">Email</label>
-            <input
-              type="text"
-              name="username"
-              class="login-input"
-              placeholder=""
-              autocomplete="username"
-            />
+            <input type="text"
+                   name="username"
+                   class="login-input"
+                   placeholder=""
+                   autocomplete="username" />
             <label class="login-label">Password</label>
-            <input
-              type="password"
-              name="password"
-              class="login-input"
-              placeholder=""
-              autocomplete="current-password"
-            />
+            <input type="password"
+                   name="password"
+                   class="login-input"
+                   placeholder=""
+                   autocomplete="current-password" />
             <a class="login-forgot" href="#">Lupa Password?</a>
             <button type="submit" class="login-btn">MASUK</button>
           </form>

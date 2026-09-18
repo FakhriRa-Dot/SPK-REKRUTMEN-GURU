@@ -346,6 +346,7 @@
         </div>
       {% endif %}
       <!-- Keputusan Akhir -->
+      <!-- Keputusan Akhir -->
       {% if kandidat.status_tahap_4 == 'hadir' and hasil and hasil.nilai_utilitas and hasil.prediksi %}
         <div class="card" style="margin-top:16px;">
           <div class="card-title">Keputusan Akhir Yayasan</div>
@@ -375,32 +376,57 @@
             </div>
             <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Ubah keputusan jika diperlukan:</div>
           {% endif %}
-          <form method="post">
-            {% csrf_token %}
-            <div style="display:flex;gap:8px;">
-              <button type="submit"
-                      name="keputusan_akhir"
-                      value="diterima"
-                      class="btn btn-primary"
-                      style="background:#1a7a3c;
-                             flex:1;
-                             justify-content:center"
-                      onclick="return confirm('Konfirmasi terima kandidat {{ kandidat.nama }}?')">
-                <i class="ti ti-check"></i> Terima Kandidat
-              </button>
-              <button type="submit"
-                      name="keputusan_akhir"
-                      value="tidak_diterima"
-                      class="btn btn-danger"
-                      style="flex:1;
-                             justify-content:center"
-                      onclick="return confirm('Konfirmasi tolak kandidat {{ kandidat.nama }}?')">
-                <i class="ti ti-x"></i> Tolak Kandidat
-              </button>
-            </div>
-          </form>
+          <div style="display:flex;gap:8px;">
+            <button type="button"
+                    onclick="konfirmasiKeputusan('diterima')"
+                    class="btn btn-primary"
+                    style="background:#1a7a3c;
+                           flex:1;
+                           justify-content:center">
+              <i class="ti ti-check"></i> Terima Kandidat
+            </button>
+            <button type="button"
+                    onclick="konfirmasiKeputusan('tidak_diterima')"
+                    class="btn btn-danger"
+                    style="flex:1;
+                           justify-content:center">
+              <i class="ti ti-x"></i> Tolak Kandidat
+            </button>
+          </div>
         </div>
       {% endif %}
+      <!-- Modal Konfirmasi Keputusan -->
+      <div id="modal-keputusan"
+           style="display:none;
+                  position:fixed;
+                  inset:0;
+                  background:rgba(0,0,0,0.4);
+                  z-index:999;
+                  align-items:center;
+                  justify-content:center">
+        <div style="background:#fff;
+                    border-radius:12px;
+                    padding:24px;
+                    max-width:400px;
+                    width:90%">
+          <div id="modal-keputusan-title"
+               style="font-size:16px;
+                      font-weight:600;
+                      margin-bottom:8px"></div>
+          <div id="modal-keputusan-body"
+               style="font-size:13px;
+                      color:var(--text-muted);
+                      margin-bottom:20px"></div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button onclick="tutupModalKeputusan()" class="btn btn-secondary">Batal</button>
+            <form id="form-keputusan" method="post">
+              {% csrf_token %}
+              <input type="hidden" name="keputusan_akhir" id="input-keputusan-value">
+              <button type="submit" id="btn-konfirmasi-keputusan" class="btn btn-primary">Ya, Konfirmasi</button>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 {% endblock content %}
@@ -423,6 +449,29 @@ new Chart(ctx, {
     plugins: { legend: { display: false }, tooltip: { enabled: false } }
   }
 });
+
+function konfirmasiKeputusan(nilai) {
+  const nama = "{{ kandidat.nama }}";
+  document.getElementById('input-keputusan-value').value = nilai;
+
+  if (nilai === 'diterima') {
+    document.getElementById('modal-keputusan-title').textContent = 'Konfirmasi Terima Kandidat';
+    document.getElementById('modal-keputusan-body').innerHTML = 'Terima <strong>' + nama + '</strong> sebagai kandidat yang lolos rekrutmen?';
+    document.getElementById('btn-konfirmasi-keputusan').style.background = '#1a7a3c';
+    document.getElementById('btn-konfirmasi-keputusan').style.borderColor = '#1a7a3c';
+  } else {
+    document.getElementById('modal-keputusan-title').textContent = 'Konfirmasi Tolak Kandidat';
+    document.getElementById('modal-keputusan-body').innerHTML = 'Tolak <strong>' + nama + '</strong> dari proses rekrutmen ini?';
+    document.getElementById('btn-konfirmasi-keputusan').style.background = '#b42318';
+    document.getElementById('btn-konfirmasi-keputusan').style.borderColor = '#b42318';
+  }
+
+  document.getElementById('modal-keputusan').style.display = 'flex';
+}
+
+function tutupModalKeputusan() {
+  document.getElementById('modal-keputusan').style.display = 'none';
+}
     </script>
   {% endif %}
 {% endblock extra_js %}
